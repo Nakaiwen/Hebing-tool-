@@ -1,0 +1,2235 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>八字 × 紫微 × 太乙 合盤曲線 · 小六太乙</title>
+<script defer src="vendor/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --paper:#f7f1e4; --ink:#283a2f; --moss:#516b55; --gold:#b99b62;
+  --muted:#8a8071; --line:#e3d9c3; --card:#fffdf6;
+  --wood:#3f7d36; --fire:#b3402f;
+  --ziwei:#6b5b8f;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"BiauKaiWeb","cwTeXKai","Noto Serif TC","Kaiti TC",serif;
+  min-height:100vh;
+}
+h1{text-align:center; font-size:1.5rem; letter-spacing:.35em; padding:26px 0 4px; font-weight:600;}
+.subtitle{text-align:center; color:var(--muted); font-size:.85rem; letter-spacing:.2em; margin-bottom:18px;}
+.wrap{max-width:980px; margin:0 auto; padding:0 14px 60px;}
+
+.input-card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:14px;}
+.input-grid{display:flex; flex-wrap:wrap; gap:12px 16px; align-items:flex-end;}
+.field{display:flex; flex-direction:column; gap:4px;}
+.field label{font-size:.78rem; color:var(--moss); letter-spacing:.08em;}
+.field input,.field select{
+  font-family:inherit; font-size:.92rem; color:var(--ink);
+  background:#fff; border:1px solid var(--line); border-radius:6px; padding:6px 8px;
+}
+.field input[type=number]{width:84px;}
+#f-name{width:120px;}
+.chk{display:flex; align-items:center; gap:5px; font-size:.85rem; padding:7px 0;}
+.btn-row{margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+.btn-primary{
+  font-family:inherit; font-size:.95rem; letter-spacing:.25em; color:#fff;
+  background:var(--ink); border:none; border-radius:8px; padding:9px 26px; cursor:pointer;
+}
+.btn-primary:hover{background:var(--moss);}
+.btn-ghost{
+  font-family:inherit; font-size:.88rem; letter-spacing:.15em; cursor:pointer;
+  background:transparent; color:var(--moss); border:1px solid var(--line);
+  border-radius:8px; padding:8px 16px;
+}
+.btn-ghost:hover{border-color:var(--gold); color:var(--ink);}
+.btn-ghost:disabled{opacity:.45; cursor:default;}
+.btn-ghost:disabled:hover{border-color:var(--line); color:var(--moss);}
+.status{font-size:.8rem; color:var(--muted);}
+.status .err{color:var(--fire);}
+
+.tabs{display:flex; gap:6px; margin-bottom:12px;}
+.tab{
+  font-family:inherit; font-size:.9rem; letter-spacing:.15em; cursor:pointer;
+  background:transparent; color:var(--moss); border:1px solid var(--line);
+  border-bottom:none; border-radius:8px 8px 0 0; padding:8px 20px;
+}
+.tab.active{background:var(--card); color:var(--ink); font-weight:600; border-color:var(--gold);}
+.pane{display:none;}
+.pane.active{display:block;}
+iframe{width:100%; height:1400px; border:1px solid var(--line); border-radius:0 8px 8px 8px; background:#fff;}
+
+.overlay-card{background:var(--card); border:1px solid var(--line); border-radius:0 8px 8px 8px; padding:18px;}
+.overlay-card h2{font-size:1.05rem; letter-spacing:.2em; color:var(--moss); margin-bottom:10px;}
+.mode-row{margin:2px 0 8px; font-size:.82rem; color:var(--moss);}
+.mode-row select{font-family:inherit; font-size:.85rem; border:1px solid var(--line); border-radius:6px; padding:3px 6px; background:#fff; color:var(--ink);}
+.legend{display:flex; flex-wrap:wrap; gap:14px; font-size:.8rem; color:var(--muted); margin:8px 0 4px;}
+.legend i{display:inline-block; vertical-align:middle; margin-right:5px;}
+.lg-bazi{width:22px; height:0; border-top:3px solid var(--gold);}
+.lg-ziwei{width:22px; height:0; border-top:2px solid var(--ziwei);}
+.lg-da{width:14px; height:0; border-top:1px dashed var(--gold);}
+.lg-dax{width:14px; height:0; border-top:1px dashed var(--ziwei);}
+.lg-band-hi{width:14px; height:10px; background:rgba(95,143,78,.18); border:1px solid rgba(95,143,78,.35);}
+.lg-band-lo{width:14px; height:10px; background:rgba(194,146,51,.16); border:1px solid rgba(194,146,51,.35);}
+.note{font-size:.78rem; color:var(--muted); line-height:1.7; margin-top:10px;}
+.detail{
+  margin-top:12px; border-top:1px dashed var(--line); padding-top:10px;
+  font-size:.86rem; line-height:1.8; min-height:3.2em;
+}
+.detail .yr{font-size:1rem; font-weight:600; letter-spacing:.1em;}
+.detail .tag{display:inline-block; border:1px solid var(--line); border-radius:5px; padding:0 6px; font-size:.76rem; margin-left:6px;}
+.tag.aus{color:#3f7d36; border-color:#3f7d36;}
+.tag.cau{color:#c2683f; border-color:#c2683f;}
+.tag.mix{color:#b5803a; border-color:#b5803a;}
+.placeholder{color:var(--muted); text-align:center; padding:46px 0; font-size:.9rem; letter-spacing:.1em;}
+#ovChart svg{display:block; width:100%; height:auto;}
+
+/* 共振分析卡 */
+.reso-card{
+  margin-top:14px; border:1px solid var(--line); border-radius:8px;
+  background:#fbf7ec; padding:12px 14px; display:none;
+}
+.reso-card h3{font-size:.92rem; letter-spacing:.18em; color:var(--moss); margin-bottom:8px;}
+.reso-grid{display:flex; flex-direction:column; gap:6px; font-size:.85rem;}
+.reso-grid b{color:var(--ink);}
+.reso-note{font-size:.76rem; color:var(--muted); line-height:1.7; margin-top:8px;}
+.sync-card{
+  margin-top:14px; border:1px solid var(--line); border-radius:8px;
+  background:#fffaf0; padding:12px 14px; display:block;
+}
+.sync-card h3{font-size:.92rem; letter-spacing:.18em; color:var(--moss); margin-bottom:8px;}
+.sync-intro{font-size:.76rem; color:var(--muted); line-height:1.7; margin-bottom:10px;}
+.sync-mode{border-top:1px dashed var(--line); padding-top:9px; margin-top:9px;}
+.sync-mode:first-of-type{border-top:none; padding-top:0; margin-top:0;}
+.sync-mode h4{font-size:.86rem; color:var(--ink); letter-spacing:.1em; margin-bottom:6px;}
+.sync-cols{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.sync-col{border-radius:7px; padding:8px 10px; font-size:.8rem; line-height:1.7;}
+.sync-col.up{background:rgba(95,143,78,.09); border:1px solid rgba(95,143,78,.24);}
+.sync-col.down{background:rgba(194,146,51,.09); border:1px solid rgba(194,146,51,.24);}
+.sync-col b{display:block; margin-bottom:3px;}
+.sync-col.up b{color:#3f7d36;}.sync-col.down b{color:#a4762e;}
+.sync-col ol{margin:0; padding-left:1.35em;}.sync-col li{margin:7px 0 10px;}
+.anchor-line{display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin-bottom:2px;}
+.anchor-grade{display:inline-block; border-radius:999px; padding:0 7px; font-size:.7rem; font-weight:700; letter-spacing:.04em; white-space:nowrap;}
+.anchor-rel{font-size:.68rem; color:#8a8071; white-space:nowrap;}
+.anchor-grade.a{color:#fff; background:#3f7d36;}
+.anchor-grade.b{color:#fff; background:#638451;}
+.anchor-grade.c{color:#765d2d; background:#efe0b7;}
+.anchor-grade.conflict{color:#fff; background:#9b5b4f;}
+.anchor-score{font-size:.72rem; color:var(--muted);}
+.anchor-legend{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 9px; font-size:.72rem; color:var(--muted);}
+.anchor-legend span{border:1px solid var(--line); border-radius:999px; padding:1px 7px; background:rgba(255,255,255,.6);}
+.sync-remind{font-size:.75rem; color:var(--muted); margin-top:5px;}
+.annual-extrema{
+  margin-top:11px; border:1px solid rgba(70,112,138,.22); border-radius:8px;
+  background:rgba(70,112,138,.045); padding:10px 11px;
+}
+.annual-extrema h5{font-size:.82rem; color:#365f78; letter-spacing:.08em; margin:0 0 4px;}
+.annual-extrema-intro{font-size:.74rem; color:var(--muted); line-height:1.7; margin-bottom:8px;}
+.annual-extrema-grid{display:grid; grid-template-columns:1fr 1fr; gap:9px;}
+.annual-extrema-col{border:1px solid var(--line); border-radius:7px; background:#fffdf8; padding:8px 9px;}
+.annual-extrema-col b{display:block; color:var(--ink); font-size:.79rem; margin-bottom:4px;}
+.annual-extrema-row{border-top:1px dashed var(--line); padding:7px 0; font-size:.76rem; line-height:1.65; color:#5f594f;}
+.annual-extrema-row:first-of-type{border-top:none; padding-top:2px;}
+.annual-extrema-source{color:var(--ink); font-weight:600;}
+.annual-extrema-matches{margin-top:1px;}
+.annual-extrema-method{color:#3f7d36; padding-left:1.1em;}
+.extrema-signals{display:inline-flex; flex-wrap:wrap; gap:4px; margin-left:5px; vertical-align:middle;}
+.extrema-signal{display:inline-block; border-radius:999px; padding:0 6px; font-size:.68rem; font-weight:600; white-space:nowrap;}
+.extrema-signal.wealth{color:#76510d; background:#f5df9e; border:1px solid #dfbd5c;}
+.extrema-signal.mobility{color:#365f78; background:#deedf5; border:1px solid #a9cddd;}
+.annual-extrema-empty{font-size:.76rem; color:var(--muted); padding:4px 0;}
+.sync-wait{
+  border:1px dashed var(--line); border-radius:7px; padding:10px 12px;
+  color:var(--muted); font-size:.8rem; line-height:1.7; background:rgba(255,255,255,.45);
+}
+.turn-card{
+  margin-top:14px; border:1px solid var(--line); border-radius:8px;
+  background:#f8f8f1; padding:12px 14px; display:block;
+}
+.turn-card h3{font-size:.92rem; letter-spacing:.18em; color:var(--moss); margin-bottom:8px;}
+.turn-intro{font-size:.76rem; color:var(--muted); line-height:1.7; margin-bottom:10px;}
+.turn-mode{border-top:1px dashed var(--line); padding-top:10px; margin-top:10px;}
+.turn-mode:first-of-type{border-top:none; padding-top:0; margin-top:0;}
+.turn-mode h4{font-size:.87rem; color:var(--ink); letter-spacing:.1em; margin-bottom:6px;}
+.turn-conclusion{font-size:.8rem; line-height:1.7; color:var(--moss); margin-bottom:8px; padding:6px 8px; background:rgba(81,107,85,.07); border-radius:6px;}
+.turn-pairs{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+.turn-pair{border:1px solid var(--line); border-radius:7px; background:#fffdf8; padding:9px 10px; font-size:.78rem; line-height:1.7;}
+.turn-pair-head{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:3px;}
+.turn-pair-head b{font-size:.84rem; color:var(--ink);}
+.turn-score{white-space:nowrap; color:#fff; background:var(--moss); border-radius:999px; padding:1px 8px; font-size:.72rem;}
+.turn-metrics{color:#665f55;}.turn-metrics strong{color:var(--ink);}
+.turn-detail{margin-top:8px; font-size:.76rem; color:var(--muted);}
+.turn-detail summary{cursor:pointer; color:var(--moss);}
+.turn-table-wrap{overflow-x:auto; margin-top:6px;}
+.turn-table{width:100%; border-collapse:collapse; min-width:650px; font-size:.75rem; color:#5f594f;}
+.turn-table th,.turn-table td{border-bottom:1px solid var(--line); padding:5px 7px; text-align:left; vertical-align:top;}
+.turn-table th{color:var(--moss); font-weight:600; background:rgba(81,107,85,.05);}
+.turn-type{display:inline-block; border-radius:999px; padding:0 6px; white-space:nowrap;}
+.turn-type.up{color:#3f7d36; background:rgba(63,125,54,.1);}
+.turn-type.down{color:#a4762e; background:rgba(164,118,46,.11);}
+.turn-method{font-size:.72rem; color:var(--muted); line-height:1.7; margin-top:8px;}
+@media (max-width:640px){
+  .field input[type=number]{width:70px;}
+  .tab{padding:8px 12px; font-size:.82rem;}
+  .sync-cols,.turn-pairs,.annual-extrema-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<h1>八字 × 紫微 × 太乙 合盤</h1>
+<div class="subtitle">小六太乙 · 三法大運曲線重疊分析</div>
+
+<div class="wrap">
+  <div class="input-card">
+    <div class="input-grid">
+      <div class="field"><label>姓名</label><input id="f-name" placeholder="命主姓名"></div>
+      <div class="field"><label>性別</label>
+        <select id="f-gender"><option value="F">女</option><option value="M">男</option></select>
+      </div>
+      <div class="field"><label>國曆年</label><input id="f-year" type="number" min="1930" max="2050" placeholder="1976" title="八字節氣資料範圍 1930–2050"></div>
+      <div class="field"><label>月</label><input id="f-month" type="number" min="1" max="12" placeholder="10"></div>
+      <div class="field"><label>日</label><input id="f-day" type="number" min="1" max="31" placeholder="14"></div>
+      <div class="field"><label>出生時辰</label>
+        <select id="f-hour">
+          <option value="0">子時 (23–01)</option><option value="1">丑時 (01–03)</option>
+          <option value="2">寅時 (03–05)</option><option value="3">卯時 (05–07)</option>
+          <option value="4">辰時 (07–09)</option><option value="5">巳時 (09–11)</option>
+          <option value="6">午時 (11–13)</option><option value="7">未時 (13–15)</option>
+          <option value="8">申時 (15–17)</option><option value="9">酉時 (17–19)</option>
+          <option value="10">戌時 (19–21)</option><option value="11">亥時 (21–23)</option>
+        </select>
+      </div>
+      <div class="field"><label>晚子時(23–24)</label>
+        <label class="chk"><input type="checkbox" id="f-latezi"><span>是（限子時）</span></label>
+      </div>
+      <div class="field"><label>閏月取月法（紫微）</label>
+        <select id="f-leap">
+          <option value="split15">過十五作下月</option>
+          <option value="thisMonth">一律作本月</option>
+          <option value="nextMonth">一律作下月</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="f-go">合盤排盤</button>
+      <button class="btn-ghost" id="f-save" disabled>存檔</button>
+      <button class="btn-ghost" id="f-load">讀取</button>
+      <button class="btn-ghost" id="ovPdf" disabled>輸出曲線 PDF 報告</button>
+      <button class="btn-ghost" id="ovPng" disabled>輸出 PNG</button>
+      <button class="btn-ghost" id="ovSvg" disabled>輸出 SVG</button>
+      <input type="file" id="f-load-file" accept=".json,application/json" style="display:none">
+      <span class="status" id="f-status">輸入生辰後按「合盤排盤」，將同時驅動下方八字盤、紫微盤與重疊曲線。</span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-pane="overlay">重疊曲線</button>
+    <button class="tab" data-pane="bazi">八字盤</button>
+    <button class="tab" data-pane="ziwei">紫微盤</button>
+    <button class="tab" data-pane="taiyi">太乙盤</button>
+  </div>
+
+  <div class="pane active" id="pane-overlay">
+    <div class="overlay-card">
+      <h2>大運人生曲線 · 三法重疊</h2>
+      <div class="mode-row" id="ovModeWrap">
+        合盤層級：
+        <select id="ovZiweiMode">
+          <option value="daen" selected>大限合盤（八字大運 × 紫微大限 × 限例太乙）</option>
+          <option value="year">流年合盤（八字流年 × 紫微逐年 × 太乙行年趨勢）</option>
+        </select>
+      </div>
+      <div id="ovChart"><div class="placeholder">尚未排盤——填好生辰後按「合盤排盤」</div></div>
+      <div class="legend" id="ovLegend" style="display:none">
+        <span><i class="lg-bazi"></i>八字大運（點＝各步大運中點年，喜用尺正規化）</span>
+        <span id="lgZiwei"><i class="lg-ziwei"></i>紫微大限能量（點＝各限中點年，各自正規化）</span>
+        <span id="lgExt"></span>
+        <span><i class="lg-da"></i>八字大運交界</span>
+        <span><i class="lg-dax"></i>紫微大限交界</span>
+        <span><i class="lg-band-hi"></i>共高帶</span>
+        <span><i class="lg-band-lo"></i>共同功課帶</span>
+      </div>
+      <div class="detail" id="ovDetail"></div>
+
+      <div class="sync-card" id="syncCard">
+        <h3>太乙錨定可信區段</h3>
+        <div class="sync-intro">以太乙為主線，八字與紫微只作交叉佐證；每一區段依方向、位置與同方向轉折評分，分成 A 強共識、B 雙法支持、C 部分支持與衝突區。大限以斜率為主，流年以今年起的未來位置為主，連續年份合併呈現。</div>
+        <div id="syncGrid"><div class="sync-wait">尚未排盤——完成三法合盤後，這裡會顯示太乙錨定的可信區段。</div></div>
+      </div>
+
+      <div class="sync-card" id="wealthCard">
+        <h3>財運訊號</h3>
+        <div class="sync-intro">八字與紫微各自獨立判定的財運訊號，<b>不參與任何曲線計分</b>，只作標示。八字看「喜用神透干＋年干或日干祿神落於該柱地支」；紫微看「武曲／太陰／天府化祿，且落於該層命宮、財帛宮或田宅宮」。兩法年份重疊處標為「雙法財運共振」——共振代表兩套系統在同一段時間各自指向財，仍非吉凶宣判，也不保證財富結果。</div>
+        <div id="wealthGrid"><div class="sync-wait">尚未排盤——八字與紫微完成後，這裡會顯示財運訊號。</div></div>
+      </div>
+
+      <div class="turn-card" id="turnCard">
+        <h3>單盤轉折與領先／落後分析</h3>
+        <div class="turn-intro">以太乙為主線，分別和八字、紫微比對同方向轉強／轉弱點；同時比較最佳時間差相關度、方向一致率與轉折吻合率，判斷太乙較常領先、同期或落後，以及線型較貼近哪一法。本卡只描述這一張命盤，不能直接推論所有命盤的普遍規律。</div>
+        <div id="turnGrid"><div class="sync-wait">尚未排盤——三法大限與流年曲線齊備後，這裡會顯示轉折關係。</div></div>
+      </div>
+
+      <div class="reso-card" id="resoCard">
+        <h3>曲線共振分析</h3>
+        <div class="reso-grid" id="resoGrid"></div>
+        <div class="reso-note" id="resoNote"></div>
+      </div>
+
+      <p class="note" id="ovNote" style="display:none">
+        各曲線各自正規化到 −1～+1，<b>只比形狀與趨勢、不比絕對值</b>；同向為兩法共振，背離處各有各的功課，皆非吉凶宣判。
+        橫軸為西元年：八字以<b>實歲起運</b>換算、紫微以<b>虛歲</b>對年（各依原工具慣例，交界帶差一年內屬正常）。
+        斜線圖的每個點置於<b>該段大運／大限的中點年</b>，點與點之間為線性內插——內插只是視覺過渡，命理判斷仍以整段為單位。
+        低谷走轉譯：功課期宜深耕勿強求。點曲線上任一年，可並列查看各法讀數。
+      </p>
+    </div>
+  </div>
+  <div class="pane" id="pane-bazi"><iframe id="fr-bazi" src="bazi.html" title="八字排盤"></iframe></div>
+  <div class="pane" id="pane-ziwei"><iframe id="fr-ziwei" src="ziwei.html" title="紫微排盤"></iframe></div>
+  <div class="pane" id="pane-taiyi"><iframe id="fr-taiyi" src="taiyi/index.html" title="太乙人道命法排盤"></iframe></div>
+</div>
+
+<script>
+/* ============================================================
+   父頁 v0.3：序列驅動重疊圖（點連點斜線）＋共振分析
+   子頁契約 merge-bridge v1 不變（bazi-curve / ziwei-curve）。
+   擴充契約 ext-curve（為太乙等後續命法預留，additive）：
+     {xl:'xl-merge-bridge', from:'<id>', type:'ext-curve', ok:true,
+      data:{ series:[{ id, label, color?, points:[{year, value}],
+                       boundaries?:[{year, label}] }] }}
+     points.value 為原始分數，父頁以該序列 max|value| 各自正規化。
+   ============================================================ */
+(function(){
+var NS='xl-merge-bridge';
+var $=function(id){ return document.getElementById(id); };
+var STATE={ bazi:null, ziwei:null, ext:[], ready:{bazi:false,ziwei:false,taiyi:false},
+            pending:null, sel:null, zmode:'daen' };
+var PDF_BUSY=false;
+var DEADBAND=0.1; // 正規化後 |v|≤0.1 視為平緩，不計入同向/背離
+var SLOPE_EPS=1e-6; // 下行提醒只排除浮點誤差；實際負斜率即視為往下
+
+/* ---------- 分頁 ---------- */
+document.querySelectorAll('.tab').forEach(function(t){
+  t.onclick=function(){
+    document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('active');});
+    document.querySelectorAll('.pane').forEach(function(x){x.classList.remove('active');});
+    t.classList.add('active');
+    $('pane-'+t.dataset.pane).classList.add('active');
+  };
+});
+
+/* ---------- 輸入映射 ---------- */
+function readForm(){
+  var y=parseInt($('f-year').value), m=parseInt($('f-month').value), d=parseInt($('f-day').value);
+  var h=parseInt($('f-hour').value);
+  if(!y||!m||!d||isNaN(h)){ return {err:'請完整填寫國曆年月日與時辰'}; }
+  if(y<1930||y>2050){ return {err:'八字節氣資料範圍為 1930–2050 年'}; }
+  var lateZi=$('f-latezi').checked && h===0;
+  var name=$('f-name').value||'未命名';
+  var genderMF=$('f-gender').value;
+  var genderCn=genderMF==='M'?'男':'女';
+  var baziHour = lateZi ? 23 : (h===0 ? 0 : h*2);
+  return {
+    bazi:  { name:name, gender:genderCn, year:y, month:m, day:d, hour:baziHour },
+    ziwei: { name:name, gender:genderMF, y:y, m:m, d:d, h:h, lateZi:lateZi, leapRule:$('f-leap').value },
+    taiyi: { name:name, gender:(genderMF==='M'?'male':'female'), y:y, m:m, d:d, hour:baziHour,
+             targetYear:new Date().getFullYear() }
+  };
+}
+
+function send(frameId, input){
+  try{ $(frameId).contentWindow.postMessage({xl:NS, type:'run', input:input}, '*'); }catch(e){}
+}
+$('f-go').onclick=function(){
+  var f=readForm();
+  if(f.err){ $('f-status').innerHTML='<span class="err">'+f.err+'</span>'; return; }
+  STATE.bazi=null; STATE.ziwei=null; STATE.ext=[]; STATE.sel=null;
+  $('f-save').disabled=true; $('ovPdf').disabled=true; $('ovPng').disabled=true; $('ovSvg').disabled=true;
+  $('resoCard').style.display='none'; $('syncCard').style.display='';
+  $('syncGrid').innerHTML='<div class="sync-wait">三法排盤中，正在等待八字、紫微與太乙曲線資料……</div>';
+  $('turnCard').style.display='';
+  $('turnGrid').innerHTML='<div class="sync-wait">三法排盤中，正在準備轉折與領先／落後分析……</div>';
+  $('f-status').textContent='三引擎排盤中…';
+  STATE.pending=f;
+  if(STATE.ready.bazi)  send('fr-bazi',  f.bazi);
+  if(STATE.ready.ziwei) send('fr-ziwei', f.ziwei);
+  if(STATE.ready.taiyi) send('fr-taiyi', f.taiyi);
+};
+
+window.addEventListener('message', function(ev){
+  var d=ev.data; if(!d||d.xl!==NS) return;
+  if(d.type==='ready'){
+    STATE.ready[d.from]=true;
+    if(STATE.pending&&STATE.pending[d.from]){ send('fr-'+d.from, STATE.pending[d.from]); }
+    return;
+  }
+  if(d.type==='ext-curve'){
+    if(d.ok&&d.data&&d.data.series){ STATE.ext=STATE.ext.concat(d.data.series); renderOverlay(); }
+    else if(d.error){ $('f-status').innerHTML+=' <span class="err">太乙：'+d.error+'</span>'; renderSyncAlerts(); }
+    return;
+  }
+  if(d.type==='bazi-curve'){ STATE.bazi=d; }
+  if(d.type==='ziwei-curve'){ STATE.ziwei=d; }
+  if(STATE.bazi&&STATE.ziwei){
+    var errs=[];
+    if(!STATE.bazi.ok) errs.push('八字：'+STATE.bazi.error);
+    if(!STATE.ziwei.ok) errs.push('紫微：'+STATE.ziwei.error);
+    if(errs.length){
+      $('f-status').innerHTML='<span class="err">'+errs.join('；')+'</span>';
+      if(STATE.bazi.ok||STATE.ziwei.ok) renderOverlay();
+    }else{
+      $('f-status').textContent='排盤完成。三個分頁皆已更新。';
+      renderOverlay();
+    }
+    if((STATE.bazi&&STATE.bazi.ok)||(STATE.ziwei&&STATE.ziwei.ok)){
+      $('f-save').disabled=false; $('ovPng').disabled=false; $('ovSvg').disabled=false;
+    }
+  }
+});
+
+/* ---------- 序列整備 ----------
+   series：{ id, label, color, width,
+             pts:[{x(年,可小數), v(−1..1), raw, …}],
+             boundaries:[{x, top|bottom, sub}], marks:[…] } */
+function buildSeries(mode){
+  var zmode=mode||STATE.zmode;
+  var list=[];
+  var B=STATE.bazi&&STATE.bazi.ok?STATE.bazi.data:null;
+  var Z=STATE.ziwei&&STATE.ziwei.ok?STATE.ziwei.data:null;
+
+  if(B){
+    var bBounds=B.pillars.map(function(p){
+      var x0=B.birthYear+p.startAge;
+      return { x:x0, bottom:p.pillar||p.gz, sub:(Math.round(p.startAge*10)/10)+'歲', gz:p.gz };
+    });
+    if(zmode==='year' && B.annual && B.annual.length){
+      // 流年合盤：八字流年 v2（大運半分基礎＋五構面；超界已於子頁截斷）
+      var aMax=30;
+      B.annual.forEach(function(a){ if(Math.abs(a.score)>aMax) aMax=Math.abs(a.score); });
+      var apts=B.annual.map(function(a){
+        return { x:a.year, v:a.score/aMax, raw:a.score, gz:a.gz,
+                 parts:a.parts||null, luckGz:a.luckGz||null, luckScore:a.luckScore };
+      });
+      list.push({
+        id:'bazi-annual', label:'八字流年', color:'#b99b62', width:1.6,
+        pts:apts, boundaries:bBounds, marks:[]
+      });
+    }else{
+      var bMax=30;
+      B.pillars.forEach(function(p){ if(Math.abs(p.score)>bMax) bMax=Math.abs(p.score); });
+      var pts=B.pillars.map(function(p){
+        var x0=B.birthYear+p.startAge;
+        return { x:x0+5, v:p.score/bMax, raw:p.score, parts:p.parts||null, gz:p.gz, x0:x0, x1:x0+10,
+                 ageLabel:(Math.round(p.startAge*10)/10)+'歲' };
+      });
+      list.push({
+        id:'bazi', label:'八字大運', color:'#b99b62', width:3,
+        pts:pts, boundaries:bBounds,
+        marks:pts.filter(function(p){return B.curGz&&p.gz===B.curGz;}).map(function(p){
+          return { x:p.x, v:p.v, ring:true, color:'#b99b62' };
+        })
+      });
+    }
+  }
+  if(Z){
+    if(zmode==='daen'&&Z.daen&&Z.daen.length){
+      var dMax=10;
+      Z.daen.forEach(function(r){ if(Math.abs(r.score)>dMax) dMax=Math.abs(r.score); });
+      var zpts=Z.daen.map(function(r){
+        var x0=Z.lunarBirthYear+r.start-1, x1=Z.lunarBirthYear+r.end;
+        return { x:(x0+x1)/2, v:r.score/dMax, raw:r.score, row:r, x0:x0, x1:x1 };
+      });
+      list.push({
+        id:'ziwei-daen', label:'紫微大限能量', color:'#6b5b8f', width:2.2,
+        pts:zpts,
+        boundaries:Z.daen.map(function(r){
+          return { x:Z.lunarBirthYear+r.start-1, top:r.ganZhi, sub:r.start+'-'+r.end };
+        }),
+        marks:zpts.map(function(p){
+          var r=p.row;
+          return { x:p.x, v:p.v, color:r.clsColor,
+                   word:r.clsWord+(r.isCur?'·今':'')+(r.isShen?'·身':''),
+                   big:(r.clsKey==='peak'||r.clsKey==='valley') };
+        })
+      });
+    }else{
+      var maxAbs=6;
+      Z.years.forEach(function(y){ if(Math.abs(y.score)>maxAbs) maxAbs=Math.abs(y.score); });
+      var COLOR_LBL={auspicious:'#5f8f4e',caution:'#c2683f',mixed:'#b5803a',normal:'#b9ad96'};
+      var ypts=Z.years.map(function(y){
+        return { x:y.year, v:y.score/maxAbs, raw:y.score, yr:y };
+      });
+      list.push({
+        id:'ziwei-year', label:'紫微逐年能量', color:'#6b5b8f', width:1.6,
+        pts:ypts,
+        boundaries:Z.daList.map(function(dd){
+          return { x:Z.lunarBirthYear+dd.start-1, top:dd.ganZhi, sub:dd.start+'-'+dd.end };
+        }),
+        marks:ypts.filter(function(p){return p.yr.label!=='normal';}).map(function(p){
+          return { x:p.x, v:p.v, color:COLOR_LBL[p.yr.label], small:true,
+                   mixed:p.yr.label==='mixed' };
+        })
+      });
+    }
+  }
+  // 擴充序列（太乙等）：以序列自身 max|value| 正規化；帶 level 者僅在對應合盤層級顯示
+  STATE.ext.forEach(function(s){
+    if(!s.points||!s.points.length) return;
+    if(s.level && s.level!==zmode) return;
+    var mx=1e-9;
+    s.points.forEach(function(p){ if(Math.abs(p.value)>mx) mx=Math.abs(p.value); });
+    list.push({
+      id:s.id, label:s.label, color:s.color||'#7d5a44', width:2,
+      pts:s.points.map(function(p){ return { x:p.year, v:p.value/mx, raw:p.value }; }),
+      boundaries:(s.boundaries||[]).map(function(b){ return { x:b.year, top:b.label, sub:'' }; }),
+      specialYears:s.specialYears||null,
+      marks:[]
+    });
+  });
+  return list;
+}
+
+/* ---------- 逐年取樣（線性內插）＋共振統計 ---------- */
+function sampleAt(series, yr){
+  var pts=series.pts;
+  if(!pts.length||yr<pts[0].x||yr>pts[pts.length-1].x) return null;
+  for(var i=0;i<pts.length-1;i++){
+    if(yr>=pts[i].x&&yr<=pts[i+1].x){
+      var t=(yr-pts[i].x)/(pts[i+1].x-pts[i].x||1);
+      return pts[i].v+(pts[i+1].v-pts[i].v)*t;
+    }
+  }
+  return pts[pts.length-1].v;
+}
+function pearson(a,b){
+  var n=a.length; if(n<3) return null;
+  var ma=0,mb=0; a.forEach(function(v){ma+=v;}); b.forEach(function(v){mb+=v;});
+  ma/=n; mb/=n;
+  var num=0,da=0,db=0;
+  for(var i=0;i<n;i++){ var xa=a[i]-ma, xb=b[i]-mb; num+=xa*xb; da+=xa*xa; db+=xb*xb; }
+  if(da===0||db===0) return null;
+  return num/Math.sqrt(da*db);
+}
+function resonance(list){
+  if(list.length<2) return null;
+  var lo=-Infinity, hi=Infinity;
+  list.forEach(function(s){
+    if(!s.pts.length) return;
+    lo=Math.max(lo, s.pts[0].x);
+    hi=Math.min(hi, s.pts[s.pts.length-1].x);
+  });
+  var years=[];
+  for(var yr=Math.ceil(lo); yr<=Math.floor(hi); yr++){
+    var vs=list.map(function(s){ return sampleAt(s,yr); });
+    if(vs.every(function(v){ return v!==null; })) years.push({yr:yr, vs:vs});
+  }
+  if(years.length<3) return null;
+  // 共振帶：全序列同時 > 或 < 平緩帶
+  var bands=[], cur=null;
+  years.forEach(function(row){
+    var kind=null;
+    if(row.vs.every(function(v){ return v> DEADBAND; })) kind='hi';
+    else if(row.vs.every(function(v){ return v< -DEADBAND; })) kind='lo';
+    var common=kind?Math.min.apply(null,row.vs.map(function(v){return Math.abs(v);})):0;
+    if(kind&&cur&&cur.kind===kind&&row.yr===cur.y1+1){
+      cur.y1=row.yr; cur._sum+=common; cur._n++;
+    }
+    else if(kind){ cur={y0:row.yr,y1:row.yr,kind:kind,_sum:common,_n:1}; bands.push(cur); }
+    else cur=null;
+  });
+  bands.forEach(function(b){
+    b.strength=Math.round((b._sum/b._n)*1000)/1000;
+    delete b._sum; delete b._n;
+  });
+  // 兩兩統計
+  var pairs=[];
+  for(var i=0;i<list.length;i++)for(var j=i+1;j<list.length;j++){
+    var same=0, opp=0, flat=0, n=0, sa=[], sb=[];
+    years.forEach(function(row){
+      var a=row.vs[i], b=row.vs[j];
+      sa.push(a); sb.push(b);
+      var ca=a>DEADBAND?1:(a<-DEADBAND?-1:0), cb=b>DEADBAND?1:(b<-DEADBAND?-1:0);
+      if(ca===0||cb===0){ flat++; return; }
+      n++;
+      if(ca===cb) same++; else opp++;
+    });
+    pairs.push({ a:list[i].label, b:list[j].label,
+                 sameRate:n?Math.round(same/n*100):null, sameN:same, oppN:opp, flatN:flat,
+                 effN:n, r:pearson(sa,sb) });
+  }
+  return { bands:bands, pairs:pairs, y0:years[0].yr, y1:years[years.length-1].yr };
+}
+function rWord(r){
+  if(r===null) return '不足以計算';
+  var a=Math.abs(r);
+  var deg=a>=0.7?'高':(a>=0.4?'中':(a>=0.2?'低':'極低'));
+  return (r>=0?'同向·':'反向·')+deg;
+}
+
+/* ---------- 繪圖 ---------- */
+function renderOverlay(){
+  var list=buildSeries();
+  if(!list.length){
+    $('ovChart').innerHTML='<div class="placeholder">三法排盤皆未成功，無曲線可畫</div>';
+    renderSyncAlerts();
+    return;
+  }
+  var x0=Infinity, x1=-Infinity;
+  list.forEach(function(s){
+    s.pts.forEach(function(p){
+      var a=(p.x0!==undefined)?p.x0:p.x, b=(p.x1!==undefined)?p.x1:p.x;
+      if(a<x0)x0=a; if(b>x1)x1=b;
+    });
+    (s.boundaries||[]).forEach(function(bd){ if(bd.x<x0)x0=bd.x; if(bd.x>x1)x1=bd.x; });
+  });
+  x0=Math.floor(x0); x1=Math.ceil(x1);
+
+  var W=920,H=360,mL=44,mR=16,mT=34,mB=40;
+  var plotW=W-mL-mR, plotH=H-mT-mB;
+  var X=function(yr){ return mL+plotW*(yr-x0)/(x1-x0); };
+  var Y=function(v){ return mT+plotH/2-v*(plotH/2)*0.92; };
+  var g='';
+
+  // 共振帶（最底層）
+  var reso=resonance(list);
+  if(reso){
+    reso.bands.forEach(function(b){
+      var xa=Math.max(X(b.y0-0.5),mL), xb=Math.min(X(b.y1+0.5),W-mR);
+      var fill=b.kind==='hi'?'rgba(95,143,78,.14)':'rgba(194,146,51,.13)';
+      g+='<rect class="reso-band" data-kind="'+b.kind+'" x="'+xa.toFixed(1)+'" y="'+mT+'" width="'+(xb-xa).toFixed(1)+'" height="'+plotH+'" fill="'+fill+'"/>';
+    });
+  }
+
+  [[1,'高'],[0,'平'],[-1,'低']].forEach(function(r){
+    var yy=Y(r[0]);
+    g+='<line x1="'+mL+'" y1="'+yy+'" x2="'+(W-mR)+'" y2="'+yy+'" stroke="'+(r[0]===0?'#c9bd9f':'#e7ddc6')+'" stroke-width="'+(r[0]===0?1.2:0.8)+'"'+(r[0]===0?'':' stroke-dasharray="3 3"')+'/>';
+    g+='<text x="'+(mL-6)+'" y="'+(yy+4)+'" text-anchor="end" fill="#8a8071" font-size="11">'+r[1]+'</text>';
+  });
+
+  // 交界豎線
+  list.forEach(function(s){
+    (s.boundaries||[]).forEach(function(b){
+      if(b.x<x0||b.x>x1) return;
+      var xx=X(b.x);
+      if(s.id==='bazi'){
+        g+='<line x1="'+xx+'" y1="'+mT+'" x2="'+xx+'" y2="'+(mT+plotH)+'" stroke="#b99b62" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>';
+        g+='<text x="'+xx+'" y="'+(H-mB+14)+'" text-anchor="middle" fill="#a8894e" font-size="9.5">'+(b.gz||b.bottom)+'</text>';
+        g+='<text x="'+xx+'" y="'+(H-mB+24)+'" text-anchor="middle" fill="#a8894e" font-size="8.5" opacity="0.8">'+b.sub+'</text>';
+      }else{
+        g+='<line x1="'+xx+'" y1="'+mT+'" x2="'+xx+'" y2="'+(mT+plotH)+'" stroke="'+s.color+'" stroke-width="1" stroke-dasharray="2 4" opacity="0.55"/>';
+        if(b.top && s.id.indexOf('ziwei')===0){ // 頂標僅留紫微（多序列頂標會互相壓字；擴充序列段資訊見點擊明細）
+          g+='<text x="'+xx+'" y="'+(mT-14)+'" text-anchor="middle" fill="'+s.color+'" font-size="9.5" opacity="0.85">'+b.top+'</text>';
+          if(b.sub) g+='<text x="'+xx+'" y="'+(mT-4)+'" text-anchor="middle" fill="'+s.color+'" font-size="8.5" opacity="0.7">'+b.sub+'</text>';
+        }
+      }
+    });
+  });
+
+  var nowY=new Date().getFullYear();
+  if(nowY>=x0&&nowY<=x1){
+    var nx=X(nowY);
+    g+='<line x1="'+nx+'" y1="'+mT+'" x2="'+nx+'" y2="'+(mT+plotH)+'" stroke="#283a2f" stroke-width="1.2" opacity="0.5"/>';
+    g+='<text x="'+nx+'" y="'+(mT+plotH+34)+'" text-anchor="middle" fill="#283a2f" font-size="10">今 '+nowY+'</text>';
+  }
+  for(var yr=Math.ceil(x0/10)*10; yr<=x1; yr+=10){
+    g+='<text x="'+X(yr)+'" y="'+(H-4)+'" text-anchor="middle" fill="#8a8071" font-size="10">'+yr+'</text>';
+  }
+
+  // 曲線本體：點連點斜線
+  list.forEach(function(s){
+    var poly=s.pts.map(function(p){ return X(p.x).toFixed(1)+','+Y(p.v).toFixed(1); }).join(' ');
+    g+='<polyline points="'+poly+'" fill="none" stroke="'+s.color+'" stroke-width="'+s.width+'" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>';
+    if(s.id!=='ziwei-year'&&s.id!=='bazi-annual'){ // 逐年序列點太密，不畫底點
+      s.pts.forEach(function(p){
+        g+='<circle cx="'+X(p.x).toFixed(1)+'" cy="'+Y(p.v).toFixed(1)+'" r="3.4" fill="'+s.color+'" stroke="#fffdf8" stroke-width="1"/>';
+      });
+    }
+    (s.marks||[]).forEach(function(m){
+      var cx=X(m.x), cy=Y(m.v);
+      if(m.ring){ g+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="7.5" fill="none" stroke="'+m.color+'" stroke-width="2"/>'; return; }
+      var rad=m.big?6:(m.small?3.6:4.4);
+      g+='<circle class="ov-dot" data-yr="'+Math.round(m.x)+'" cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+rad+'" fill="'+m.color+'" stroke="'+(m.mixed?'#7a3b2e':'#fffdf8')+'" stroke-width="1.2" style="cursor:pointer"/>';
+      if(m.word) g+='<text x="'+cx.toFixed(1)+'" y="'+(cy-rad-5).toFixed(1)+'" text-anchor="middle" fill="'+m.color+'" font-size="10.5">'+m.word+'</text>';
+    });
+  });
+
+  // 點擊層
+  var colW=plotW/(x1-x0);
+  for(var cy2=x0; cy2<=x1; cy2++){
+    g+='<rect class="ov-hit" data-yr="'+cy2+'" x="'+(X(cy2)-colW/2)+'" y="'+mT+'" width="'+colW+'" height="'+plotH+'" fill="transparent" style="cursor:pointer"/>';
+  }
+
+  $('ovChart').innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="多法大運曲線重疊圖">'+g+'</svg>';
+  $('ovLegend').style.display='';
+  var lgB=document.querySelector('.legend span:first-child');
+  if(lgB) lgB.innerHTML='<i class="lg-bazi"></i>'+(STATE.zmode==='daen'
+    ?'八字大運（五構面計分：干支喜忌·納音·神煞·刑沖合·長生祿刃絕，各自正規化）'
+    :'八字流年 v2（大運半分基礎＋干支·納音·神煞·刑沖合·長生，各自正規化）');
+  $('lgZiwei').innerHTML='<i class="lg-ziwei"></i>'+(STATE.zmode==='daen'
+    ?'紫微大限能量（點＝各限中點年，各自正規化；標記色＝峰/強/轉折/守/谷質性）'
+    :'紫微逐年能量（四化疊加，各自正規化）');
+  // 擴充序列圖例（依當前層級實際上圖者，含線色）
+  var extLegend='';
+  list.forEach(function(s){
+    if(s.id==='bazi'||s.id==='bazi-annual'||s.id==='ziwei-daen'||s.id==='ziwei-year') return;
+    var desc=s.id==='taiyi-xianli'?'（十二宮歲段中點斜線，含時宮加權，各自正規化）'
+            :s.id==='taiyi-xingnian'?'（虛歲逐歲＝限例分＋行年加權分，各自正規化）':'';
+    extLegend+='<span><i style="display:inline-block;vertical-align:middle;margin-right:5px;width:22px;height:0;border-top:2px solid '+s.color+'"></i>'+s.label+desc+'</span>　';
+  });
+  $('lgExt').innerHTML=extLegend;
+  $('ovNote').style.display='';
+  renderReso(reso);
+  renderSyncAlerts();
+  document.querySelectorAll('.ov-hit,.ov-dot').forEach(function(el){
+    el.addEventListener('click',function(){ showDetail(+el.dataset.yr); });
+  });
+  var pick=STATE.sel!=null?STATE.sel:(nowY>=x0&&nowY<=x1?nowY:x0);
+  showDetail(pick);
+}
+
+/* ---------- 共振卡 ---------- */
+function renderReso(reso){
+  if(!reso){ $('resoCard').style.display='none'; return; }
+  var hiBands=reso.bands.filter(function(b){return b.kind==='hi';});
+  var loBands=reso.bands.filter(function(b){return b.kind==='lo';});
+  var fmtBands=function(bs){
+    if(!bs.length) return '無';
+    return bs.map(function(b){ return b.y0===b.y1?(''+b.y0):(b.y0+'–'+b.y1); }).join('、');
+  };
+  var html='';
+  reso.pairs.forEach(function(p){
+    html+='<span>'+p.a+' × '+p.b+'：同向率 <b>'+(p.sameRate===null?'—':p.sameRate+'%')+'</b>'+
+          '（同向 '+p.sameN+' 年／背離 '+p.oppN+' 年／平緩 '+p.flatN+' 年）'+
+          '　形狀相似度 <b>'+(p.r===null?'—':p.r.toFixed(2))+'</b>（'+rWord(p.r)+'）</span>';
+  });
+  html+='<span>共高帶：<b style="color:#3f7d36">'+fmtBands(hiBands)+'</b>　共同功課帶：<b style="color:#a4762e">'+fmtBands(loBands)+'</b></span>';
+  $('resoGrid').innerHTML=html;
+  $('resoNote').textContent='統計範圍 '+reso.y0+'–'+reso.y1+'（各法曲線共同覆蓋年，逐年線性內插取樣）。'+
+    '同向率＝雙方皆越過平緩帶（|v|>'+DEADBAND+'）的年份中方向一致的比例；形狀相似度為 Pearson 相關係數，'+
+    '僅衡量曲線走勢形狀的相似程度——粗顆粒曲線經內插後數值僅供參考，非命理結論、亦非吉凶宣判。'+
+    '共振帶是多法同時偏高／偏低的時段：共高帶宜順勢開展，共同功課帶宜深耕勿強求、把根紮穩。';
+  $('resoCard').style.display='';
+}
+
+/* ---------- 三線同步提醒（固定抓八字／紫微／太乙三條核心線） ---------- */
+function coreThreeSeries(mode){
+  var ids=mode==='daen'
+    ?['bazi','ziwei-daen','taiyi-xianli']
+    :['bazi-annual','ziwei-year','taiyi-xingnian'];
+  var all=buildSeries(mode);
+  return ids.map(function(id){
+    for(var i=0;i<all.length;i++) if(all[i].id===id) return all[i];
+    return null;
+  }).filter(function(s){return !!s;});
+}
+
+/* ---------- 單盤轉折與領先／落後分析 ----------
+   大限：原始節點、最小轉折幅度 0.12、至少一段、配對窗 ±5 年。
+   流年：三年移動平均、最小年差 0.08、至少連續兩年、配對窗 ±2 年。
+   配對差＝另一法轉折年－太乙轉折年；正值代表太乙領先。 */
+var TURN_CONFIG={
+  daen:{minDelta:.12,minRun:1,maxFlat:1,matchWindow:5,smooth:1,lagSearch:5,dirDelta:.008},
+  year:{minDelta:.08,minRun:2,maxFlat:1,matchWindow:2,smooth:3,lagSearch:3,dirDelta:.03}
+};
+function preparedTurnSeries(series,mode){
+  var cfg=TURN_CONFIG[mode], pts=series.pts||[];
+  if(cfg.smooth<=1) return {id:series.id,label:series.label,pts:pts.map(function(p){return {x:p.x,v:p.v};})};
+  var radius=Math.floor(cfg.smooth/2), out=[];
+  for(var i=radius;i<pts.length-radius;i++){
+    var sum=0,n=0;
+    for(var j=i-radius;j<=i+radius;j++){sum+=pts[j].v;n++;}
+    out.push({x:pts[i].x,v:sum/n});
+  }
+  return {id:series.id,label:series.label,pts:out};
+}
+function turningPoints(series,mode){
+  var cfg=TURN_CONFIG[mode], prepared=preparedTurnSeries(series,mode), pts=prepared.pts;
+  if(pts.length<3) return [];
+  var runs=[],cur=null,flat=0;
+  function finish(){if(cur){runs.push(cur);cur=null;}flat=0;}
+  for(var i=0;i<pts.length-1;i++){
+    var delta=pts[i+1].v-pts[i].v;
+    var dir=Math.abs(delta)>=cfg.minDelta?(delta>0?1:-1):0;
+    if(!dir){
+      if(cur){flat++;cur.endEdge=i;if(flat>cfg.maxFlat) finish();}
+      continue;
+    }
+    flat=0;
+    if(cur&&cur.dir===dir){
+      cur.endEdge=i;cur.lastEdge=i;cur.count++;cur.delta+=delta;
+    }else{
+      finish();
+      cur={dir:dir,startEdge:i,endEdge:i,firstEdge:i,lastEdge:i,count:1,delta:delta};
+    }
+  }
+  finish();
+  var accepted=runs.filter(function(r){return r.count>=cfg.minRun;});
+  var compact=[];
+  accepted.forEach(function(r){
+    var last=compact[compact.length-1];
+    if(last&&last.dir===r.dir){
+      last.endEdge=r.endEdge;last.lastEdge=r.lastEdge;last.count+=r.count;last.delta+=r.delta;
+    }else compact.push(Object.assign({},r));
+  });
+  var turns=[];
+  for(var k=1;k<compact.length;k++){
+    var before=compact[k-1],after=compact[k];
+    if(before.dir===after.dir) continue;
+    var prevEnd=pts[before.lastEdge+1].x, nextStart=pts[after.firstEdge].x;
+    var rawYear=(prevEnd+nextStart)/2;
+    var year=mode==='year'?Math.round(rawYear):Math.round(rawYear*10)/10;
+    turns.push({
+      year:year,
+      type:after.dir>0?'up':'down',
+      label:after.dir>0?'轉強':'轉弱',
+      strength:Math.round(Math.min(Math.abs(before.delta),Math.abs(after.delta))*1000)/1000,
+      value:sampleAt(prepared,year)
+    });
+  }
+  return turns;
+}
+function median(nums){
+  if(!nums.length) return null;
+  var a=nums.slice().sort(function(x,y){return x-y;}),m=Math.floor(a.length/2);
+  return a.length%2?a[m]:(a[m-1]+a[m])/2;
+}
+function matchTurningPoints(source,target,windowYears){
+  var used={},matches=[];
+  source.forEach(function(s){
+    var best=-1,bestDist=Infinity;
+    target.forEach(function(t,i){
+      if(used[i]||t.type!==s.type) return;
+      var dist=Math.abs(t.year-s.year);
+      if(dist<=windowYears&&(dist<bestDist||(dist===bestDist&&t.year<target[best].year))){best=i;bestDist=dist;}
+    });
+    if(best<0){matches.push({sourceYear:s.year,type:s.type,targetYear:null,lag:null,relation:'none'});return;}
+    used[best]=true;
+    var lag=Math.round((target[best].year-s.year)*10)/10;
+    matches.push({sourceYear:s.year,type:s.type,targetYear:target[best].year,lag:lag,
+                  relation:Math.abs(lag)<=1?'same':(lag>0?'lead':'lag')});
+  });
+  var found=matches.filter(function(m){return m.targetYear!==null;}),lags=found.map(function(m){return m.lag;});
+  var count=function(kind){return found.filter(function(m){return m.relation===kind;}).length;};
+  return {matches:matches,matched:found.length,total:source.length,
+          matchRate:source.length?Math.round(found.length/source.length*100):null,
+          lead:count('lead'),same:count('same'),lag:count('lag'),
+          medianLag:median(lags),averageLag:lags.length?Math.round(lags.reduce(function(a,b){return a+b;},0)/lags.length*10)/10:null};
+}
+function laggedPearson(a,b,lag){
+  var lo=Math.ceil(Math.max(a.pts[0].x,b.pts[0].x-lag));
+  var hi=Math.floor(Math.min(a.pts[a.pts.length-1].x,b.pts[b.pts.length-1].x-lag));
+  var av=[],bv=[];
+  for(var y=lo;y<=hi;y++){
+    var x=sampleAt(a,y),z=sampleAt(b,y+lag);
+    if(x!==null&&z!==null){av.push(x);bv.push(z);}
+  }
+  return {r:pearson(av,bv),n:av.length};
+}
+function directionAgreement(a,b,mode){
+  var cfg=TURN_CONFIG[mode];
+  var lo=Math.ceil(Math.max(a.pts[0].x,b.pts[0].x));
+  var hi=Math.floor(Math.min(a.pts[a.pts.length-1].x,b.pts[b.pts.length-1].x))-1;
+  var same=0,n=0,flat=0;
+  for(var y=lo;y<=hi;y++){
+    var a0=sampleAt(a,y),a1=sampleAt(a,y+1),b0=sampleAt(b,y),b1=sampleAt(b,y+1);
+    if(a0===null||a1===null||b0===null||b1===null) continue;
+    var da=a1-a0,db=b1-b0;
+    if(Math.abs(da)<cfg.dirDelta||Math.abs(db)<cfg.dirDelta){flat++;continue;}
+    n++;if((da>0)===(db>0))same++;
+  }
+  return {rate:n?Math.round(same/n*100):null,same:same,effective:n,flat:flat};
+}
+function turningPairAnalysis(taiyi,other,mode,taiyiTurns,otherTurns){
+  var cfg=TURN_CONFIG[mode],match=matchTurningPoints(taiyiTurns,otherTurns,cfg.matchWindow);
+  var ta=preparedTurnSeries(taiyi,mode),ob=preparedTurnSeries(other,mode);
+  var zero=laggedPearson(ta,ob,0),best={r:null,n:0,lag:0};
+  for(var lag=-cfg.lagSearch;lag<=cfg.lagSearch;lag++){
+    var row=laggedPearson(ta,ob,lag);
+    if(row.r===null) continue;
+    if(best.r===null||row.r>best.r+1e-9||(Math.abs(row.r-best.r)<=1e-9&&Math.abs(lag)<Math.abs(best.lag))){
+      best={r:row.r,n:row.n,lag:lag};
+    }
+  }
+  var dir=directionAgreement(ta,ob,mode);
+  var r01=best.r===null?.5:(best.r+1)/2;
+  var dir01=dir.rate===null?0:dir.rate/100;
+  var match01=match.matchRate===null?0:match.matchRate/100;
+  var score=Math.round(100*(.4*r01+.3*dir01+.3*match01));
+  return {targetId:other.id,targetLabel:other.label,turns:otherTurns,match:match,
+          zeroR:zero.r,bestR:best.r,bestLag:best.lag,bestN:best.n,
+          direction:dir,fitScore:score};
+}
+function turningAge(year,birthY){
+  return {real:Math.round((year-birthY)*10)/10,virtual:Math.round((year-birthY+1)*10)/10};
+}
+function dominantTiming(pair){
+  var m=pair.match;
+  if(!m.matched) return '尚無可配對轉折';
+  var top=Math.max(m.lead,m.same,m.lag),words=[];
+  if(m.lead===top) words.push('領先');
+  if(m.same===top) words.push('同期');
+  if(m.lag===top) words.push('落後');
+  return words.length===1?'較常'+words[0]:words.join('／')+'次數接近';
+}
+function buildTurningModeSnapshot(mode,birthY){
+  var core=coreThreeSeries(mode);
+  if(core.length!==3) return null;
+  var bazi=core[0],ziwei=core[1],taiyi=core[2];
+  var bt=turningPoints(bazi,mode),zt=turningPoints(ziwei,mode),tt=turningPoints(taiyi,mode);
+  var bp=turningPairAnalysis(taiyi,bazi,mode,tt,bt);
+  var zp=turningPairAnalysis(taiyi,ziwei,mode,tt,zt);
+  var rows=tt.map(function(t,i){
+    var age=turningAge(t.year,birthY);
+    return {year:t.year,type:t.type,label:t.label,strength:t.strength,realAge:age.real,virtualAge:age.virtual,
+            bazi:bp.match.matches[i],ziwei:zp.match.matches[i]};
+  });
+  var comparison=Math.abs(bp.fitScore-zp.fitScore)<5?'close':(bp.fitScore>zp.fitScore?'bazi':'ziwei');
+  return {mode:mode,config:Object.assign({},TURN_CONFIG[mode]),turns:{taiyi:tt,bazi:bt,ziwei:zt},
+          pairs:{bazi:bp,ziwei:zp},rows:rows,comparison:comparison};
+}
+function buildTurningSnapshot(){
+  var B=STATE.bazi&&STATE.bazi.ok?STATE.bazi.data:null;
+  var birthY=B?B.birthYear:parseInt($('f-year').value);
+  if(!birthY) return null;
+  return {version:'turning-leadlag/v1',birthYear:birthY,
+          daen:buildTurningModeSnapshot('daen',birthY),year:buildTurningModeSnapshot('year',birthY)};
+}
+function fmtTurnNumber(v,digits){
+  if(v===null||v===undefined||!isFinite(v)) return '—';
+  return Number(v).toFixed(digits===undefined?2:digits);
+}
+function lagText(lag,withYear){
+  if(lag===null||lag===undefined) return '無對應';
+  var years=Math.abs(lag),n=(Math.abs(years-Math.round(years))<1e-6?Math.round(years):years.toFixed(1));
+  if(Math.abs(lag)<=1) return (withYear||'')+'同期（差 '+n+' 年）';
+  return (withYear||'')+(lag>0?'太乙領先 ':'太乙落後 ')+n+' 年';
+}
+function bestLagText(pair){
+  if(pair.bestR===null) return '資料不足';
+  if(Math.abs(pair.bestLag)<=1) return '同期附近';
+  return pair.bestLag>0?'太乙領先 '+pair.bestLag+' 年':'太乙落後 '+Math.abs(pair.bestLag)+' 年';
+}
+function turnPairHtml(name,pair){
+  var m=pair.match;
+  return '<div class="turn-pair"><div class="turn-pair-head"><b>太乙 × '+name+'</b><span class="turn-score">綜合貼合度 '+pair.fitScore+'</span></div>'+
+    '<div class="turn-metrics">轉折吻合 <strong>'+(m.matchRate===null?'—':m.matchRate+'%')+'</strong>（'+m.matched+'/'+m.total+'）'+
+    '　領先／同期／落後 <strong>'+m.lead+'／'+m.same+'／'+m.lag+'</strong><br>'+dominantTiming(pair)+
+    (m.medianLag===null?'':'；配對差中位數 '+(m.medianLag>0?'+':'')+m.medianLag+' 年')+'<br>'+ 
+    '同期相關 <strong>'+fmtTurnNumber(pair.zeroR)+'</strong>　最佳時間差相關 <strong>'+fmtTurnNumber(pair.bestR)+'</strong>（'+bestLagText(pair)+'）<br>'+ 
+    '方向一致率 <strong>'+(pair.direction.rate===null?'—':pair.direction.rate+'%')+'</strong>（有效比較 '+pair.direction.effective+' 年）</div></div>';
+}
+function turnMatchCell(m){
+  if(!m||m.targetYear===null) return '無同方向對應';
+  return fmtYear(m.targetYear)+'｜'+lagText(m.lag,'');
+}
+function fmtYear(y){return Math.abs(y-Math.round(y))<1e-6?String(Math.round(y)):Number(y).toFixed(1);}
+function turnModeHtml(mode,title,birthY){
+  var snap=buildTurningModeSnapshot(mode,birthY);
+  if(!snap) return '<div class="turn-mode"><h4>'+title+'</h4><div class="sync-wait">三線資料尚未齊備，暫時無法分析轉折關係。</div></div>';
+  var bp=snap.pairs.bazi,zp=snap.pairs.ziwei;
+  var fit=snap.comparison==='close'
+    ?'太乙與八字、紫微的綜合貼合度接近（差距小於 5 分）'
+    :(snap.comparison==='bazi'?'太乙線型目前較貼近八字':'太乙線型目前較貼近紫微');
+  var conclusion=fit+'；太乙 × 八字'+dominantTiming(bp)+'，太乙 × 紫微'+dominantTiming(zp)+'。';
+  var rows=snap.rows.length?snap.rows.map(function(r){
+    return '<tr><td>'+fmtYear(r.year)+'<br><span style="color:var(--muted)">實歲 '+fmtYear(r.realAge)+'／虛歲 '+fmtYear(r.virtualAge)+'</span></td>'+ 
+      '<td><span class="turn-type '+r.type+'">'+r.label+'</span></td><td>'+turnMatchCell(r.bazi)+'</td><td>'+turnMatchCell(r.ziwei)+'</td></tr>';
+  }).join(''):'<tr><td colspan="4">依目前門檻未辨識出有效太乙轉折。</td></tr>';
+  var cfg=snap.config;
+  return '<div class="turn-mode"><h4>'+title+'</h4><div class="turn-conclusion">'+conclusion+'</div>'+ 
+    '<div class="turn-pairs">'+turnPairHtml('八字',bp)+turnPairHtml('紫微',zp)+'</div>'+ 
+    '<details class="turn-detail"><summary>檢視太乙轉折逐筆配對（共 '+snap.rows.length+' 筆）</summary><div class="turn-table-wrap"><table class="turn-table">'+
+    '<thead><tr><th>太乙轉折</th><th>類型</th><th>八字對應</th><th>紫微對應</th></tr></thead><tbody>'+rows+'</tbody></table></div></details>'+ 
+    '<div class="turn-method">判定：'+(mode==='daen'?'原始大限節點':'三年移動平均')+'；最小幅度 '+cfg.minDelta+'；至少維持 '+cfg.minRun+(mode==='daen'?' 個線段':' 年')+
+    '；同方向配對窗 ±'+cfg.matchWindow+' 年，±1 年視為同期。綜合貼合度＝最佳時間差相關 40%＋方向一致率 30%＋轉折吻合率 30%。</div></div>';
+}
+function renderTurningAnalysis(){
+  var B=STATE.bazi&&STATE.bazi.ok?STATE.bazi.data:null;
+  var birthY=B?B.birthYear:parseInt($('f-year').value);
+  $('turnCard').style.display='';
+  if(!birthY){
+    $('turnGrid').innerHTML='<div class="sync-wait">尚未排盤——三法大限與流年曲線齊備後，這裡會顯示轉折關係。</div>';
+    return;
+  }
+  $('turnGrid').innerHTML=turnModeHtml('daen','大限轉折關係',birthY)+turnModeHtml('year','流年轉折關係',birthY);
+}
+/* 大限提醒採折線斜率：上行須三線同升；下行須太乙下降＋八字或紫微任一線下降。 */
+function slopeOverlapBands(mode,core,kind){
+  var ids=mode==='daen'
+    ?{bazi:'bazi',ziwei:'ziwei-daen',taiyi:'taiyi-xianli'}
+    :{bazi:'bazi-annual',ziwei:'ziwei-year',taiyi:'taiyi-xingnian'};
+  var byId={};
+  core.forEach(function(s){byId[s.id]=s;});
+  var bazi=byId[ids.bazi], ziwei=byId[ids.ziwei], taiyi=byId[ids.taiyi];
+  if(!bazi||!ziwei||!taiyi) return [];
+  var series=[bazi,ziwei,taiyi], lo=-Infinity, hi=Infinity;
+  series.forEach(function(s){
+    if(!s.pts.length) return;
+    lo=Math.max(lo,s.pts[0].x);
+    hi=Math.min(hi,s.pts[s.pts.length-1].x);
+  });
+  if(!isFinite(lo)||!isFinite(hi)) return [];
+  /* 以三線所有節點切開共同年軸，確保每個小段內三線斜率皆固定。 */
+  var cuts=[lo,hi];
+  series.forEach(function(s){
+    s.pts.forEach(function(p){ if(p.x>lo&&p.x<hi) cuts.push(p.x); });
+  });
+  cuts.sort(function(a,b){return a-b;});
+  cuts=cuts.filter(function(x,i){return i===0||Math.abs(x-cuts[i-1])>SLOPE_EPS;});
+  var bands=[], cur=null;
+  for(var i=0;i<cuts.length-1;i++){
+    var x0=cuts[i], x1=cuts[i+1], span=x1-x0;
+    if(span<=SLOPE_EPS) continue;
+    var b0=sampleAt(bazi,x0), b1=sampleAt(bazi,x1);
+    var z0=sampleAt(ziwei,x0), z1=sampleAt(ziwei,x1);
+    var t0=sampleAt(taiyi,x0), t1=sampleAt(taiyi,x1);
+    if(b0===null||b1===null||z0===null||z1===null||t0===null||t1===null){cur=null;continue;}
+    var bSlope=(b1-b0)/span, zSlope=(z1-z0)/span, tSlope=(t1-t0)/span;
+    var up=kind==='hi';
+    var bMatch=up?bSlope>SLOPE_EPS:bSlope< -SLOPE_EPS;
+    var zMatch=up?zSlope>SLOPE_EPS:zSlope< -SLOPE_EPS;
+    var tMatch=up?tSlope>SLOPE_EPS:tSlope< -SLOPE_EPS;
+    var qualified=up?(tMatch&&bMatch&&zMatch):(tMatch&&(bMatch||zMatch));
+    if(qualified){
+      var companions=[];
+      var pairStrength=[];
+      if(!up&&bMatch){ companions.push('八字'); pairStrength.push(Math.min(-tSlope,-bSlope)); }
+      if(!up&&zMatch){ companions.push('紫微'); pairStrength.push(Math.min(-tSlope,-zSlope)); }
+      var strength=up?Math.min(tSlope,bSlope,zSlope):Math.max.apply(null,pairStrength);
+      /* 太乙為主：跨到太乙下一個折線節點時另開一組；只跨八字／紫微節點則可續接。 */
+      var taiyiNode=taiyi.pts.some(function(p){return Math.abs(p.x-x0)<=SLOPE_EPS;});
+      if(cur&&Math.abs(x0-cur._x1)<=SLOPE_EPS&&!taiyiNode){
+        cur._x1=x1; cur._weighted+=strength*span; cur._duration+=span;
+        companions.forEach(function(name){cur._companions[name]=true;});
+      }else{
+        cur={kind:kind,basis:'slope',_x0:x0,_x1:x1,_weighted:strength*span,_duration:span,_companions:{}};
+        companions.forEach(function(name){cur._companions[name]=true;});
+        bands.push(cur);
+      }
+    }else cur=null;
+  }
+  bands.forEach(function(b){
+    /* 起點取最近西元年；終點向上取整，呈現折線涵蓋的完整年度範圍。 */
+    b.y0=Math.round(b._x0);
+    b.y1=Math.max(b.y0,Math.ceil(b._x1-SLOPE_EPS));
+    b.strength=Math.round(b._weighted*1000)/1000;
+    b.slopeStrength=Math.round((b._weighted/b._duration)*1000)/1000;
+    b.trendStart=Math.round(b._x0*1000)/1000;
+    b.trendEnd=Math.round(b._x1*1000)/1000;
+    b.companions=['八字','紫微'].filter(function(name){return !!b._companions[name];});
+    delete b._x0; delete b._x1; delete b._weighted; delete b._duration; delete b._companions;
+  });
+  return bands;
+}
+
+/* 流年提醒採「位置」且只列今年起的未來：連續符合年份合併為一組。 */
+function futurePositionBands(mode,core,fromYear){
+  var ids=mode==='daen'
+    ?{bazi:'bazi',ziwei:'ziwei-daen',taiyi:'taiyi-xianli'}
+    :{bazi:'bazi-annual',ziwei:'ziwei-year',taiyi:'taiyi-xingnian'};
+  var byId={}; core.forEach(function(s){byId[s.id]=s;});
+  var bazi=byId[ids.bazi], ziwei=byId[ids.ziwei], taiyi=byId[ids.taiyi];
+  if(!bazi||!ziwei||!taiyi) return [];
+  var series=[bazi,ziwei,taiyi], lo=-Infinity, hi=Infinity;
+  series.forEach(function(s){
+    if(!s.pts.length) return;
+    lo=Math.max(lo,s.pts[0].x);
+    hi=Math.min(hi,s.pts[s.pts.length-1].x);
+  });
+  if(!isFinite(lo)||!isFinite(hi)) return [];
+  var bands=[], cur=null;
+  for(var yr=Math.max(Math.ceil(lo),fromYear);yr<=Math.floor(hi);yr++){
+    var bv=sampleAt(bazi,yr), zv=sampleAt(ziwei,yr), tv=sampleAt(taiyi,yr);
+    if(bv===null||zv===null||tv===null){cur=null;continue;}
+    var kind=null, companions=[], strength=0;
+    if(bv>DEADBAND&&zv>DEADBAND&&tv>DEADBAND){
+      kind='hi'; strength=Math.min(Math.abs(bv),Math.abs(zv),Math.abs(tv));
+    }else if(tv< -DEADBAND&&(bv< -DEADBAND||zv< -DEADBAND)){
+      kind='lo';
+      var pairs=[];
+      if(bv< -DEADBAND){companions.push('八字');pairs.push(Math.min(Math.abs(tv),Math.abs(bv)));}
+      if(zv< -DEADBAND){companions.push('紫微');pairs.push(Math.min(Math.abs(tv),Math.abs(zv)));}
+      strength=Math.max.apply(null,pairs);
+    }
+    if(kind&&cur&&cur.kind===kind&&yr===cur.y1+1){
+      cur.y1=yr; cur._sum+=strength; cur._n++;
+      companions.forEach(function(name){cur._companions[name]=true;});
+    }else if(kind){
+      cur={y0:yr,y1:yr,kind:kind,basis:'position',_sum:strength,_n:1,_companions:{}};
+      companions.forEach(function(name){cur._companions[name]=true;});
+      bands.push(cur);
+    }else cur=null;
+  }
+  bands.forEach(function(b){
+    b.strength=Math.round((b._sum/b._n)*1000)/1000;
+    b.companions=['八字','紫微'].filter(function(name){return !!b._companions[name];});
+    delete b._sum; delete b._n; delete b._companions;
+  });
+  return bands;
+}
+
+/* 大限第二階段：斜率近似但未正式成立時，才用數值位置補判。 */
+function daenPositionFallbackBands(core,kind){
+  var ids={bazi:'bazi',ziwei:'ziwei-daen',taiyi:'taiyi-xianli'};
+  var byId={}; core.forEach(function(s){byId[s.id]=s;});
+  var bazi=byId[ids.bazi], ziwei=byId[ids.ziwei], taiyi=byId[ids.taiyi];
+  if(!bazi||!ziwei||!taiyi) return [];
+  var series=[bazi,ziwei,taiyi], lo=-Infinity, hi=Infinity;
+  series.forEach(function(s){
+    if(!s.pts.length) return;
+    lo=Math.max(lo,s.pts[0].x);
+    hi=Math.min(hi,s.pts[s.pts.length-1].x);
+  });
+  if(!isFinite(lo)||!isFinite(hi)) return [];
+  var bands=[], cur=null, lastYear=Math.floor(hi)-1;
+  for(var yr=Math.ceil(lo);yr<=lastYear;yr++){
+    var b0=sampleAt(bazi,yr), b1=sampleAt(bazi,yr+1);
+    var z0=sampleAt(ziwei,yr), z1=sampleAt(ziwei,yr+1);
+    var t0=sampleAt(taiyi,yr), t1=sampleAt(taiyi,yr+1);
+    if(b0===null||b1===null||z0===null||z1===null||t0===null||t1===null){cur=null;continue;}
+    var bs=b1-b0, zs=z1-z0, ts=t1-t0;
+    var up=kind==='hi';
+    var primary=up
+      ?(bs>SLOPE_EPS&&zs>SLOPE_EPS&&ts>SLOPE_EPS)
+      :(ts< -SLOPE_EPS&&(bs< -SLOPE_EPS||zs< -SLOPE_EPS));
+    var slopeMatches=up
+      ?[bs,zs,ts].filter(function(v){return v>SLOPE_EPS;}).length
+      :[bs,zs,ts].filter(function(v){return v< -SLOPE_EPS;}).length;
+    var near=up?slopeMatches>=2:slopeMatches>=1;
+    var companions=[], position=false, strength=0;
+    if(up){
+      position=b0>DEADBAND&&z0>DEADBAND&&t0>DEADBAND;
+      if(position) strength=Math.min(Math.abs(b0),Math.abs(z0),Math.abs(t0));
+    }else{
+      position=t0< -DEADBAND&&(b0< -DEADBAND||z0< -DEADBAND);
+      var pairs=[];
+      if(position&&b0< -DEADBAND){companions.push('八字');pairs.push(Math.min(Math.abs(t0),Math.abs(b0)));}
+      if(position&&z0< -DEADBAND){companions.push('紫微');pairs.push(Math.min(Math.abs(t0),Math.abs(z0)));}
+      if(pairs.length) strength=Math.max.apply(null,pairs);
+    }
+    if(!primary&&near&&position){
+      if(cur&&yr===cur.y1+1){
+        cur.y1=yr; cur._sum+=strength; cur._n++; cur.nearSlopeCount=Math.max(cur.nearSlopeCount,slopeMatches);
+        companions.forEach(function(name){cur._companions[name]=true;});
+      }else{
+        cur={y0:yr,y1:yr,kind:kind,basis:'position-fallback',nearSlopeCount:slopeMatches,
+             _sum:strength,_n:1,_companions:{}};
+        companions.forEach(function(name){cur._companions[name]=true;});
+        bands.push(cur);
+      }
+    }else cur=null;
+  }
+  bands.forEach(function(b){
+    b.strength=Math.round((b._sum/b._n)*1000)/1000;
+    b.companions=['八字','紫微'].filter(function(name){return !!b._companions[name];});
+    delete b._sum; delete b._n; delete b._companions;
+  });
+  return bands;
+}
+
+function pickDaenHybridBands(slopeBands,fallbackBands,kind,limit){
+  var slope=pickChronologicalBands(slopeBands,kind,limit);
+  var fallback=pickChronologicalBands(fallbackBands,kind,limit).filter(function(f){
+    return !slope.some(function(s){return f.y0<=s.y1&&f.y1>=s.y0;});
+  });
+  return slope.concat(fallback.slice(0,Math.max(0,limit-slope.length)))
+    .sort(function(a,b){return a.y0-b.y0||a.y1-b.y1;});
+}
+function pickChronologicalBands(bands,kind,limit){
+  return (bands||[]).slice().sort(function(a,b){
+    return a.y0-b.y0||a.y1-b.y1;
+  }).filter(function(b){return !kind||b.kind===kind;}).slice(0,limit);
+}
+function spanText(a,b){ return a===b?String(a):(a+'–'+b); }
+function syncBandText(b,birthY){
+  var real0=b.y0-birthY, real1=b.y1-birthY;
+  var virt0=real0+1, virt1=real1+1;
+  return '西元 '+spanText(b.y0,b.y1)+'｜約實歲 '+spanText(real0,real1)+'｜虛歲 '+spanText(virt0,virt1);
+}
+function syncColumnHtml(mode,kind,bands,birthY,limit){
+  var up=kind==='hi';
+  var daen=mode==='daen';
+  var title=daen
+    ?(up?'三線同步往上（斜率優先・位置補判，最多 '+limit+' 組）':'二線同步往下（太乙為主・斜率優先・位置補判，最多 '+limit+' 組）')
+    :(up?'三線同在上方（未來・位置，最多 '+limit+' 組）':'二線同在下方（太乙為主・未來・位置，最多 '+limit+' 組）');
+  var reminder=daen
+    ?(up?'提醒：優先列三法大限同步上行；近似未符但三線同在高檔者，以位置補判列入。'
+        :'提醒：優先列太乙與至少一法同步下行；近似未符但太乙與至少一法同在低檔者，以位置補判列入。')
+    :(up?'提醒：自今年起三法流年數值同在上方，可作為未來規劃參考，仍宜保留彈性。'
+        :'提醒：自今年起太乙與至少一法流年數值同在下方，宜預留緩衝並分散風險。');
+  var body=bands.length
+    ?'<ol>'+bands.map(function(b){
+       var pair=up?'':'｜成立：太乙＋'+((b.companions||[]).join('／')||'八字／紫微');
+       var basis=daen?'｜判定：'+(b.basis==='position-fallback'?'位置補判':'斜率'):'';
+       return '<li>'+syncBandText(b,birthY)+pair+basis+'</li>';
+     }).join('')+'</ol>'
+    :'<span>無符合區段</span>';
+  return '<div class="sync-col '+(up?'up':'down')+'"><b>'+title+'</b>'+body+
+         '<div class="sync-remind">'+reminder+'</div></div>';
+}
+/* ---------- 太乙錨定可信區段 ----------
+   太乙是主線；八字、紫微各自依方向／位置／轉折提供證據。
+   大限：方向 40、位置 35、轉折 25；流年：位置 50、方向 25、轉折 25。
+   A＝兩條佐證線皆達 70；B＝至少一條達 70 且另一條未強烈反向；
+   C＝至少有一項有效支持；兩條佐證線都明顯反向則標示衝突。 */
+var ANCHOR_CONFIG={
+  daen:{direction:40,position:35,turn:25,turnWindow:5,minYears:2,futureOnly:false},
+  year:{direction:25,position:50,turn:25,turnWindow:2,minYears:2,futureOnly:true}
+};
+function anchorSeriesMap(mode,core){
+  var ids=mode==='daen'
+    ?{bazi:'bazi',ziwei:'ziwei-daen',taiyi:'taiyi-xianli'}
+    :{bazi:'bazi-annual',ziwei:'ziwei-year',taiyi:'taiyi-xingnian'};
+  var byId={}; (core||[]).forEach(function(s){byId[s.id]=s;});
+  return {bazi:byId[ids.bazi],ziwei:byId[ids.ziwei],taiyi:byId[ids.taiyi]};
+}
+function anchorPosition(v){
+  return v>DEADBAND?1:(v< -DEADBAND?-1:0);
+}
+function anchorDirection(series,y,mode){
+  if(!series||!series.pts||!series.pts.length) return 0;
+  var a=sampleAt(series,y),b=sampleAt(series,y+1);
+  if(a===null||b===null) return 0;
+  var threshold=mode==='year'?TURN_CONFIG.year.dirDelta:SLOPE_EPS;
+  return b-a>threshold?1:(b-a< -threshold?-1:0);
+}
+function anchorTurnEvidence(mode,taiyi,other,band,opposite){
+  var cfg=ANCHOR_CONFIG[mode],tt=turningPoints(taiyi,mode),ot=turningPoints(other,mode);
+  var lo=band.y0-cfg.turnWindow,hi=band.y1+cfg.turnWindow,count=0;
+  if(opposite){
+    var used={};
+    tt.forEach(function(t){
+      if(t.year<lo||t.year>hi) return;
+      var best=-1,dist=Infinity;
+      ot.forEach(function(o,i){
+        if(used[i]||o.type===t.type) return;
+        var d=Math.abs(o.year-t.year);
+        if(d<=cfg.turnWindow&&d<dist){best=i;dist=d;}
+      });
+      if(best>=0){used[best]=true;count++;}
+    });
+    return count;
+  }
+  var matched=matchTurningPoints(tt,ot,cfg.turnWindow);
+  matched.matches.forEach(function(m){
+    if(m.targetYear===null) return;
+    if((m.sourceYear>=lo&&m.sourceYear<=hi)||(m.targetYear>=lo&&m.targetYear<=hi)) count++;
+  });
+  return count;
+}
+function anchorPairEvidence(mode,name,rows,taiyi,other,band){
+  var cfg=ANCHOR_CONFIG[mode],dirEff=0,dirSame=0,dirOpp=0,posEff=0,posSame=0,posOpp=0;
+  rows.forEach(function(r){
+    var o=r[name],tp=anchorPosition(r.tv),op=anchorPosition(o.v);
+    if(r.tdir&&o.dir){dirEff++;if(r.tdir===o.dir)dirSame++;else dirOpp++;}
+    if(tp){posEff++;if(tp===op)posSame++;else if(op&&tp===-op)posOpp++;}
+  });
+  var dirRate=dirEff?dirSame/dirEff:0,dirOppRate=dirEff?dirOpp/dirEff:0;
+  var posRate=posEff?posSame/posEff:0,posOppRate=posEff?posOpp/posEff:0;
+  var turnMatches=anchorTurnEvidence(mode,taiyi,other,band,false);
+  var oppositeTurns=anchorTurnEvidence(mode,taiyi,other,band,true);
+  var score=Math.round(cfg.direction*dirRate+cfg.position*posRate+cfg.turn*(turnMatches?1:0));
+  var opposition=Math.round(cfg.direction*dirOppRate+cfg.position*posOppRate+cfg.turn*(oppositeTurns?1:0));
+  return {score:score,opposition:opposition,
+          directionRate:Math.round(dirRate*100),directionEffective:dirEff,
+          positionRate:Math.round(posRate*100),positionEffective:posEff,
+          turnMatches:turnMatches,oppositeTurns:oppositeTurns};
+}
+function anchorBandGrade(bazi,ziwei){
+  var best=Math.max(bazi.score,ziwei.score),maxOpp=Math.max(bazi.opposition,ziwei.opposition);
+  if(bazi.score>=70&&ziwei.score>=70&&maxOpp<35) return 'A';
+  if((bazi.score>=70&&ziwei.opposition<70)||(ziwei.score>=70&&bazi.opposition<70)) return 'B';
+  if(bazi.opposition>=35&&ziwei.opposition>=35&&best<35) return 'conflict';
+  if(best>=35) return 'C';
+  return null;
+}
+/* ---------- 八字可靠度係數（v0.9.28）----------
+   八字曲線的錯誤特性是「離散翻面」：喜用神一旦判反，整條線近似取負，
+   不是連續誤差。八字端（v0.9.22–v0.9.26）已能標示自己的把握程度，
+   但父頁先前完全未讀取，導致臨界盤與明顯盤在分級中權重相同。
+   本係數同時乘在 score 與 opposition 上——不可靠的線，其反對同樣不可靠。
+   紫微與太乙不依賴喜用神，不套用本係數。 */
+function baziReliabilityOf(B){
+  if(!B||!B.strength) return 1;
+  var conf=B.strength.confidence||'',r=1;
+  if(conf==='臨界') r=0.6;
+  else if(conf==='偏臨界') r=0.8;
+  /* '明顯' 與 '特殊格局'（已正式切換的明確從格／專旺／化氣）維持 1 */
+  var alts=(B.yongShen&&B.yongShen.alternatives)||[];
+  if(alts.length>0) r=Math.max(0.5,Math.round(r*0.75*100)/100);
+  return r;
+}
+function baziReliability(){
+  return baziReliabilityOf(STATE.bazi&&STATE.bazi.ok?STATE.bazi.data:null);
+}
+/* 可信度＝支持減反向（v0.9.28）。舊版對 B、C 級只取最強支持線分數、
+   完全不扣反向證據，會把「八字支持 72、紫微反向 65」顯示成 72%。 */
+function anchorBandConfidence(grade,bazi,ziwei){
+  if(grade==='conflict') return Math.min(bazi.opposition,ziwei.opposition);
+  var b=Math.max(0,bazi.score-bazi.opposition),z=Math.max(0,ziwei.score-ziwei.opposition);
+  if(grade==='A') return Math.min(b,z);
+  return Math.max(b,z);
+}
+function buildAnchoredBands(mode,core,fromYear){
+  var map=anchorSeriesMap(mode,core),bazi=map.bazi,ziwei=map.ziwei,taiyi=map.taiyi;
+  if(!bazi||!ziwei||!taiyi) return [];
+  var raw={bazi:bazi,ziwei:ziwei,taiyi:taiyi};
+  var trend=mode==='year'
+    ?{bazi:preparedTurnSeries(bazi,mode),ziwei:preparedTurnSeries(ziwei,mode),taiyi:preparedTurnSeries(taiyi,mode)}
+    :raw;
+  var lo=Math.ceil(Math.max(bazi.pts[0].x,ziwei.pts[0].x,taiyi.pts[0].x));
+  var hi=Math.floor(Math.min(bazi.pts[bazi.pts.length-1].x,ziwei.pts[ziwei.pts.length-1].x,taiyi.pts[taiyi.pts.length-1].x));
+  if(ANCHOR_CONFIG[mode].futureOnly) lo=Math.max(lo,fromYear||new Date().getFullYear());
+  var bands=[],cur=null;
+  for(var y=lo;y<=hi;y++){
+    var tv=sampleAt(taiyi,y),bv=sampleAt(bazi,y),zv=sampleAt(ziwei,y);
+    if(tv===null||bv===null||zv===null){cur=null;continue;}
+    var tdir=anchorDirection(trend.taiyi,y,mode),bdir=anchorDirection(trend.bazi,y,mode),zdir=anchorDirection(trend.ziwei,y,mode);
+    var tp=anchorPosition(tv),bp=anchorPosition(bv),zp=anchorPosition(zv),kind=null;
+    if(mode==='daen') kind=tdir>0?'up':(tdir<0?'down':(tp>0?'up':(tp<0?'down':null)));
+    else kind=tp>0?'up':(tp<0?'down':null);
+    if(!kind){cur=null;continue;}
+    var bSupport=(tdir&&tdir===bdir)||(tp&&tp===bp),zSupport=(tdir&&tdir===zdir)||(tp&&tp===zp);
+    var bOpp=(tdir&&bdir&&tdir===-bdir)||(tp&&bp&&tp===-bp);
+    var zOpp=(tdir&&zdir&&tdir===-zdir)||(tp&&zp&&tp===-zp);
+    if(!(bSupport||zSupport||(bOpp&&zOpp))){cur=null;continue;}
+    var row={y:y,tv:tv,tdir:tdir,bazi:{v:bv,dir:bdir},ziwei:{v:zv,dir:zdir}};
+    if(cur&&cur.kind===kind&&y===cur.y1+1){cur.y1=y;cur.rows.push(row);}
+    else{cur={y0:y,y1:y,kind:kind,rows:[row]};bands.push(cur);}
+  }
+  return bands.map(function(b){
+    var bp=anchorPairEvidence(mode,'bazi',b.rows,taiyi,bazi,b);
+    var zp=anchorPairEvidence(mode,'ziwei',b.rows,taiyi,ziwei,b);
+    /* v0.9.28：八字端自評的可靠度在此進入分級，原始值保留供回查。 */
+    var rel=baziReliability();
+    bp.reliability=rel; bp.scoreRaw=bp.score; bp.oppositionRaw=bp.opposition;
+    bp.score=Math.round(bp.score*rel); bp.opposition=Math.round(bp.opposition*rel);
+    var grade=anchorBandGrade(bp,zp),tDirYears=b.rows.filter(function(r){return !!r.tdir;}).length;
+    if(!grade||b.y1-b.y0+1<ANCHOR_CONFIG[mode].minYears) return null;
+    b.grade=grade;b.confidence=anchorBandConfidence(grade,bp,zp);
+    b.basis=mode==='year'?'position':(tDirYears>=Math.ceil(b.rows.length/2)?'slope':'position-fallback');
+    b.pairs={bazi:bp,ziwei:zp};
+    b.supporters=['八字','紫微'].filter(function(n){
+      var p=n==='八字'?bp:zp;
+      return p.score>=35&&p.score>=p.opposition;
+    });
+    b.companions=b.supporters.slice();
+    b.strength=Math.round(b.confidence*10)/1000;
+    delete b.rows;
+    return b;
+  }).filter(function(b){return !!b;});
+}
+function pickAnchoredBands(bands,kind,limit){
+  var rank={A:0,B:1,C:2,conflict:3};
+  var picked=(bands||[]).filter(function(b){return b.kind===kind;}).sort(function(a,b){
+    return rank[a.grade]-rank[b.grade]||b.confidence-a.confidence||a.y0-b.y0;
+  }).slice(0,limit);
+  return picked.sort(function(a,b){return a.y0-b.y0||a.y1-b.y1;});
+}
+function anchorGradeText(grade){
+  return grade==='A'?'A 強共識':(grade==='B'?'B 雙法支持':(grade==='C'?'C 部分支持':'衝突區'));
+}
+function anchoredBandHtml(b,birthY){
+  var real0=b.y0-birthY,real1=b.y1-birthY,virt0=real0+1,virt1=real1+1;
+  /* v0.9.28：折扣本身必須看得見，否則等於把證據強度再藏一次。 */
+  var rel=b.pairs&&b.pairs.bazi?b.pairs.bazi.reliability:1;
+  var relTag=(rel!==undefined&&rel<1)?'<span class="anchor-rel">八字可靠度 '+Math.round(rel*100)+'%</span>':'';
+  var legacy=(typeof SAVE_LEGACY!=='undefined'&&SAVE_LEGACY)?'<span class="anchor-rel">舊版口徑</span>':'';
+  return '<li><div class="anchor-line"><span class="anchor-grade '+b.grade.toLowerCase()+'">'+anchorGradeText(b.grade)+'</span>'+
+    '<span>西元 '+spanText(b.y0,b.y1)+'｜約實歲 '+spanText(real0,real1)+'｜虛歲 '+spanText(virt0,virt1)+'</span>'+
+    relTag+legacy+
+    '<span class="anchor-score">可信度 '+b.confidence+'%</span></div></li>';
+}
+function anchoredColumnHtml(mode,kind,bands,birthY,limit){
+  var up=kind==='up',title=mode==='daen'
+    ?(up?'運勢上升強旺期（大限・最多 '+limit+' 組）':'運勢走弱低潮期（大限・最多 '+limit+' 組）')
+    :(up?'連續流年形成的強旺帶（最多 '+limit+' 組）':'連續流年形成的低潮帶（最多 '+limit+' 組）');
+  var reminder=mode==='daen'
+    ?(up?'代表整體運勢逐步往上、力量漸強；以大限斜率為主、位置為輔。'
+        :'代表整體運勢逐步走弱、較容易面臨壓力與低潮；宜穩健調整並預留緩衝。')
+    :(up?'代表未來年份位於較有利、能量較強的位置；適合把握機會並分段推進。'
+        :'代表未來年份位於較弱、較需保守的位置；宜降低風險並預留時間與資源。');
+  var body=bands.length?'<ol>'+bands.map(function(b){return anchoredBandHtml(b,birthY);}).join('')+'</ol>':'<span>無達 C 級以上或明確衝突的連續區段</span>';
+  return '<div class="sync-col '+(up?'up':'down')+'"><b>'+title+'</b>'+body+'<div class="sync-remind">'+reminder+'</div></div>';
+}
+/* ---------- 太乙流年高低點 ±1 年呼應 ----------
+   僅在八字、紫微、太乙三條流年線的共同覆蓋範圍內比較。
+   先把連續同值的平台合成一個局部極值，再依數值取太乙最高／最低各 6 個；
+   八字、紫微除須為同類型局部極值，也必須位於同方向位置（高 > +0.1、低 < -0.1），
+   最後才在前後 1 年內配對，避免把時間較遠的峰谷視為同一次呼應。 */
+var ANNUAL_EXTREMA_WINDOW=1,ANNUAL_EXTREMA_LIMIT=6,ANNUAL_EXTREMA_EPS=1e-7;
+function localExtremaPoints(series,kind,lo,hi){
+  if(!series||!series.pts||!series.pts.length) return [];
+  lo=Math.ceil(lo===undefined?series.pts[0].x:lo);
+  hi=Math.floor(hi===undefined?series.pts[series.pts.length-1].x:hi);
+  var yearly=[];
+  for(var y=lo;y<=hi;y++){
+    var v=sampleAt(series,y);
+    if(v!==null&&isFinite(v)) yearly.push({year:y,value:v});
+  }
+  if(yearly.length<3) return [];
+  var groups=[];
+  yearly.forEach(function(p){
+    var g=groups[groups.length-1];
+    if(g&&p.year===g.end+1&&Math.abs(p.value-g.value)<=ANNUAL_EXTREMA_EPS){
+      g.end=p.year;
+    }else groups.push({start:p.year,end:p.year,value:p.value});
+  });
+  var out=[];
+  for(var i=1;i<groups.length-1;i++){
+    var before=groups[i-1],g=groups[i],after=groups[i+1];
+    var hit=kind==='peak'
+      ?g.value>before.value+ANNUAL_EXTREMA_EPS&&g.value>after.value+ANNUAL_EXTREMA_EPS
+      :g.value<before.value-ANNUAL_EXTREMA_EPS&&g.value<after.value-ANNUAL_EXTREMA_EPS;
+    if(!hit) continue;
+    out.push({year:Math.floor((g.start+g.end)/2),value:g.value,
+              plateauStart:g.start,plateauEnd:g.end,kind:kind});
+  }
+  return out.sort(function(a,b){
+    return kind==='peak'?(b.value-a.value||a.year-b.year):(a.value-b.value||a.year-b.year);
+  });
+}
+function matchLocalExtreme(source,targetExtrema,windowYears,kind){
+  var candidates=[];
+  (targetExtrema||[]).forEach(function(t){
+    if(kind==='peak'&&t.value<=DEADBAND) return;
+    if(kind==='trough'&&t.value>= -DEADBAND) return;
+    var nearest=Math.max(t.plateauStart,Math.min(source.year,t.plateauEnd));
+    var dist=Math.abs(nearest-source.year);
+    if(dist<=windowYears) candidates.push({point:t,year:nearest,dist:dist});
+  });
+  candidates.sort(function(a,b){
+    if(a.dist!==b.dist) return a.dist-b.dist;
+    var valueOrder=kind==='peak'?(b.point.value-a.point.value):(a.point.value-b.point.value);
+    return valueOrder||a.year-b.year;
+  });
+  if(!candidates.length) return null;
+  var best=candidates[0];
+  return {year:best.year,lag:best.year-source.year,value:best.point.value,
+          representativeYear:best.point.year,
+          plateauStart:best.point.plateauStart,plateauEnd:best.point.plateauEnd};
+}
+var TAIYI_SPECIAL_SIGNAL_CATALOG=[
+  {key:'luMaThreeWay',label:'祿馬交馳・三合',tone:'wealth',note:'行年＋祿＋馬'},
+  {key:'luMaTwoWay',label:'祿馬交馳・雙合',tone:'wealth',note:'祿＋馬'},
+  {key:'keJiaAllThree',label:'祿主＋祿＋馬・三合',tone:'wealth',note:'能量最強'},
+  {key:'luZhuAndFeiLu',label:'祿主＋飛祿・事業財富',tone:'wealth',note:'利事業與財富累積'},
+  {key:'luZhuAndFeiMa',label:'祿主＋飛馬・開拓升遷',tone:'mobility',note:'利開拓、升遷與變動'}
+];
+function taiyiSpecialSignalsForSpan(specialYears,y0,y1,birthY){
+  if(!specialYears||!birthY) return [];
+  var out=[];
+  TAIYI_SPECIAL_SIGNAL_CATALOG.forEach(function(def){
+    (specialYears[def.key]||[]).forEach(function(rawAge){
+      var age=+rawAge,year=birthY+age-1;
+      if(!isFinite(age)||year<y0||year>y1) return;
+      out.push({key:def.key,label:def.label,tone:def.tone,note:def.note,age:age,year:year});
+    });
+  });
+  return out.sort(function(a,b){return a.year-b.year||a.label.localeCompare(b.label);});
+}
+function buildAnnualExtremaSnapshot(core,birthY){
+  core=core||coreThreeSeries('year');
+  if(!birthY){
+    var B=STATE.bazi&&STATE.bazi.ok?STATE.bazi.data:null;
+    birthY=B?B.birthYear:parseInt($('f-year').value);
+  }
+  if(!birthY||!core||core.length!==3) return null;
+  var map=anchorSeriesMap('year',core),series=[map.bazi,map.ziwei,map.taiyi];
+  if(series.some(function(s){return !s||!s.pts||!s.pts.length;})) return null;
+  var lo=Math.ceil(Math.max.apply(null,series.map(function(s){return s.pts[0].x;})));
+  var hi=Math.floor(Math.min.apply(null,series.map(function(s){return s.pts[s.pts.length-1].x;})));
+  if(hi-lo<2) return null;
+  var target={
+    bazi:{peak:localExtremaPoints(map.bazi,'peak',lo,hi),trough:localExtremaPoints(map.bazi,'trough',lo,hi)},
+    ziwei:{peak:localExtremaPoints(map.ziwei,'peak',lo,hi),trough:localExtremaPoints(map.ziwei,'trough',lo,hi)}
+  };
+  var specialYears=map.taiyi.specialYears||{};
+  function annotateMatch(match){
+    if(!match) return null;
+    match.virtualAge=match.year-birthY+1;
+    match.specialSignals=taiyiSpecialSignalsForSpan(specialYears,match.plateauStart,match.plateauEnd,birthY);
+    return match;
+  }
+  function rows(kind){
+    return localExtremaPoints(map.taiyi,kind,lo,hi).map(function(p){
+      var row={year:p.year,value:p.value,plateauStart:p.plateauStart,plateauEnd:p.plateauEnd,
+              realAge:p.year-birthY,virtualAge:p.year-birthY+1,
+              specialSignals:taiyiSpecialSignalsForSpan(specialYears,p.plateauStart,p.plateauEnd,birthY),
+              bazi:annotateMatch(matchLocalExtreme(p,target.bazi[kind],ANNUAL_EXTREMA_WINDOW,kind)),
+              ziwei:annotateMatch(matchLocalExtreme(p,target.ziwei[kind],ANNUAL_EXTREMA_WINDOW,kind))};
+      return row;
+    }).filter(function(row){return !!(row.bazi||row.ziwei);})
+      .slice(0,ANNUAL_EXTREMA_LIMIT)
+      .sort(function(a,b){return a.year-b.year;});
+  }
+  return {version:'annual-extrema-echo/v5',birthYear:birthY,commonRange:{y0:lo,y1:hi},
+          matchWindow:ANNUAL_EXTREMA_WINDOW,limit:ANNUAL_EXTREMA_LIMIT,
+          positionRule:'support-peak-above-deadband-support-trough-below-deadband',
+          positionThreshold:{peak:DEADBAND,trough:-DEADBAND},
+          displayRule:'at-least-one-qualified-support-match',
+          specialYearRule:'taiyi-engine-virtual-age-overlap-on-source-and-matched-support-years',
+          specialYears:JSON.parse(JSON.stringify(specialYears)),
+          peaks:rows('peak'),troughs:rows('trough')};
+}
+function extremaSpanText(row){
+  return row.plateauStart===row.plateauEnd?String(row.year):spanText(row.plateauStart,row.plateauEnd)+'（代表 '+row.year+'）';
+}
+function extremaLagText(lag){
+  if(lag===0) return '同年';
+  return '差 '+(lag>0?'+':'−')+Math.abs(lag)+' 年';
+}
+function extremaSignalsHtml(signals,owner){
+  if(!signals||!signals.length) return '';
+  var seen={},chips=[];
+  signals.forEach(function(s){
+    var shortLabel=(s.key==='luMaThreeWay'||s.key==='luMaTwoWay')?'祿馬交馳':
+      (s.key==='luZhuAndFeiLu'?'祿主飛祿':null);
+    if(!shortLabel||seen[shortLabel]) return;
+    seen[shortLabel]=true;
+    chips.push('<span class="extrema-signal wealth" title="'+owner+'｜'+s.label+'｜虛歲 '+s.age+'｜'+s.note+'">'+shortLabel+'</span>');
+  });
+  return chips.length?'<span class="extrema-signals">'+chips.join('')+'</span>':'';
+}
+function extremaMatchText(name,match,kind){
+  if(!match) return '';
+  var yr=match.plateauStart===match.plateauEnd?String(match.year):spanText(match.plateauStart,match.plateauEnd);
+  return '<span class="hit">'+name+' '+yr+'（'+extremaLagText(match.lag)+'）</span>'+extremaSignalsHtml(match.specialSignals,name);
+}
+function annualExtremaRowHtml(row,kind,index){
+  var matches='';
+  if(row.bazi) matches+='<div class="annual-extrema-method">'+extremaMatchText('八字',row.bazi,kind)+'</div>';
+  if(row.ziwei) matches+='<div class="annual-extrema-method">'+extremaMatchText('紫微',row.ziwei,kind)+'</div>';
+  return '<div class="annual-extrema-row"><div class="annual-extrema-source">'+(index+1)+'. 太乙'+(kind==='peak'?'高點':'低點')+'｜西元 '+extremaSpanText(row)+
+    '｜實歲 '+row.realAge+'／虛歲 '+row.virtualAge+extremaSignalsHtml(row.specialSignals,'太乙')+'</div><div class="annual-extrema-matches">'+matches+'</div></div>';
+}
+function annualExtremaColumnHtml(rows,kind){
+  var body=rows.length?rows.map(function(r,i){return annualExtremaRowHtml(r,kind,i);}).join(''):'<div class="annual-extrema-empty">共同資料範圍內沒有八字或紫微呼應的'+(kind==='peak'?'高點':'低點')+'。</div>';
+  return '<div class="annual-extrema-col"><b>'+(kind==='peak'?'太乙最高 '+ANNUAL_EXTREMA_LIMIT+' 個局部高點':'太乙最低 '+ANNUAL_EXTREMA_LIMIT+' 個局部低點')+'</b>'+body+'</div>';
+}
+function annualExtremaHtml(snapshot){
+  if(!snapshot) return '<div class="annual-extrema"><h5>太乙流年高低點 ±'+ANNUAL_EXTREMA_WINDOW+' 年呼應</h5><div class="annual-extrema-empty">三條流年資料尚不足，暫時無法比較。</div></div>';
+  return '<div class="annual-extrema"><h5>太乙流年高低點 ±'+ANNUAL_EXTREMA_WINDOW+' 年呼應</h5><div class="annual-extrema-intro">'+
+    '以太乙流年最高／最低各 '+ANNUAL_EXTREMA_LIMIT+' 個局部點為錨，查看八字與紫微是否在前後 '+ANNUAL_EXTREMA_WINDOW+' 年出現同類高點／低點。'+
+    '佐證線高點須同時位於高檔（> +0.1），低點須同時位於低檔（< −0.1）；低檔反彈或高檔回落不算呼應。'+
+    '命中特殊年份時，以「祿馬交馳」或「祿主飛祿」短標籤提示。'+
+    '只列八字或紫微至少一法有呼應的太乙點；兩法皆未呼應者隱藏。入選後依年齡由小到大排列。比較範圍為三線共同年份 '+snapshot.commonRange.y0+'–'+snapshot.commonRange.y1+'；連續同值平台只算 1 個點。</div><div class="annual-extrema-grid">'+
+    annualExtremaColumnHtml(snapshot.peaks,'peak')+annualExtremaColumnHtml(snapshot.troughs,'trough')+'</div></div>';
+}
+function syncModeHtml(mode,title,limit,birthY){
+  var core=coreThreeSeries(mode);
+  if(core.length!==3){
+    var need=mode==='daen'
+      ?[{id:'bazi',name:'八字大運'},{id:'ziwei-daen',name:'紫微大限'},{id:'taiyi-xianli',name:'限例太乙'}]
+      :[{id:'bazi-annual',name:'八字流年'},{id:'ziwei-year',name:'紫微逐年'},{id:'taiyi-xingnian',name:'太乙行年'}];
+    var have={}; core.forEach(function(s){have[s.id]=true;});
+    var missing=need.filter(function(x){return !have[x.id];}).map(function(x){return x.name;});
+    return '<div class="sync-mode"><h4>'+title+'</h4><div class="sync-wait">三線資料尚未齊備，等待：'+missing.join('、')+'</div></div>';
+  }
+  var bands=buildAnchoredBands(mode,core,new Date().getFullYear());
+  var up=pickAnchoredBands(bands,'up',limit),down=pickAnchoredBands(bands,'down',limit);
+  var extrema=mode==='year'?annualExtremaHtml(buildAnnualExtremaSnapshot(core,birthY)):'';
+  return '<div class="sync-mode"><h4>'+title+'</h4><div class="anchor-legend"><span>A：八字、紫微皆強支持</span><span>B：至少一法完整支持</span><span>C：部分線索</span><span>衝突：兩法皆反向</span></div><div class="sync-cols">'+
+         anchoredColumnHtml(mode,'up',up,birthY,limit)+anchoredColumnHtml(mode,'down',down,birthY,limit)+'</div>'+extrema+'</div>';
+}
+/* ---------- 財運訊號（v0.9.28）----------
+   八字與紫微各自在子頁判定後送上來，父頁只負責呈現與求交集。
+   共振＝兩法的年份區間有交集；大限層因兩法起運換算慣例不同
+   （八字實歲、紫微虛歲），一律先各自換算成西元年區間再比對。
+   本層完全不參與曲線計分與 A／B／C 分級。 */
+function wealthSignalsOf(which){
+  var S=STATE[which]&&STATE[which].ok?STATE[which].data:null;
+  return (S&&S.wealthSignals)||null;
+}
+function wealthOverlap(a,b){
+  var y0=Math.max(a.y0,b.y0),y1=Math.min(a.y1,b.y1);
+  return y1>=y0?{y0:y0,y1:y1}:null;
+}
+function buildWealthSnapshot(){
+  var bw=wealthSignalsOf('bazi'),zw=wealthSignalsOf('ziwei');
+  if(!bw&&!zw) return null;
+  var snap={schema:'xiaoliu.wealth-resonance/v1',affectsCurve:false,
+            bazi:bw||null,ziwei:zw||null,daen:[],annual:[]};
+  var bd=(bw&&bw.daen)||[],zd=(zw&&zw.daen)||[];
+  bd.forEach(function(b){
+    zd.forEach(function(z){
+      var ov=wealthOverlap(b,z);
+      if(ov) snap.daen.push({y0:ov.y0,y1:ov.y1,bazi:b,ziwei:z});
+    });
+  });
+  snap.daen.sort(function(p,q){return p.y0-q.y0;});
+  var zy={}; ((zw&&zw.annual)||[]).forEach(function(r){ zy[r.year]=r; });
+  ((bw&&bw.annual)||[]).forEach(function(r){
+    if(zy[r.year]) snap.annual.push({year:r.year,bazi:r,ziwei:zy[r.year]});
+  });
+  snap.annual.sort(function(p,q){return p.year-q.year;});
+  return snap;
+}
+function wealthListHtml(title,rows,fmt,empty){
+  var body=rows&&rows.length
+    ?'<ol>'+rows.map(fmt).join('')+'</ol>'
+    :'<span>'+empty+'</span>';
+  return '<div class="sync-col"><b>'+title+'</b>'+body+'</div>';
+}
+function ziweiHitText(hits){
+  return (hits||[]).map(function(h){return h.star+'化祿→'+h.palace;}).join('、');
+}
+function renderWealthSignals(){
+  var snap=buildWealthSnapshot();
+  if(!snap){
+    $('wealthGrid').innerHTML='<div class="sync-wait">尚未排盤——八字與紫微完成後，這裡會顯示財運訊號。</div>';
+    return;
+  }
+  var bw=snap.bazi,zw=snap.ziwei;
+  var bDa=wealthListHtml('八字財運・大限',(bw&&bw.daen)||[],function(r){
+    return '<li><div class="anchor-line"><span class="anchor-grade c">八字</span>'+
+      '<span>'+r.gz+'｜西元 '+spanText(r.y0,r.y1)+'｜約實歲 '+spanText(r.realAge0,r.realAge1)+'</span>'+
+      '<span class="anchor-rel">'+r.ganElement+'為喜用・'+r.luFrom+'祿神'+(r.strengthLevel?'・'+r.strengthLevel:'')+'</span></div></li>';
+  },bw?'此盤大限無符合條件的財運訊號':'八字尚未排盤');
+  var bYr=wealthListHtml('八字財運・流年',(bw&&bw.annual)||[],function(r){
+    return '<li><div class="anchor-line"><span class="anchor-grade c">八字</span>'+
+      '<span>'+r.year+' '+r.gz+'｜約實歲 '+r.realAge+'</span>'+
+      '<span class="anchor-rel">'+r.ganElement+'為喜用・'+r.luFrom+'祿神</span></div></li>';
+  },bw?'此盤流年無符合條件的財運訊號':'八字尚未排盤');
+  var zDa=wealthListHtml('紫微財運・大限',(zw&&zw.daen)||[],function(r){
+    return '<li><div class="anchor-line"><span class="anchor-grade b">紫微</span>'+
+      '<span>'+r.ganZhi+' '+r.palaceName+'｜西元 '+spanText(r.y0,r.y1)+'｜虛歲 '+spanText(r.start,r.end)+'</span>'+
+      '<span class="anchor-rel">'+ziweiHitText(r.hits)+'</span></div></li>';
+  },zw?'此盤大限無符合條件的財運訊號':'紫微尚未排盤');
+  var zYr=wealthListHtml('紫微財運・流年',(zw&&zw.annual)||[],function(r){
+    return '<li><div class="anchor-line"><span class="anchor-grade b">紫微</span>'+
+      '<span>'+r.year+' '+r.ganZhi+'｜虛歲 '+r.virtualAge+'</span>'+
+      '<span class="anchor-rel">'+ziweiHitText(r.hits)+'</span></div></li>';
+  },zw?'此盤流年無符合條件的財運訊號':'紫微尚未排盤');
+  var rDa=wealthListHtml('雙法財運共振・大限',snap.daen,function(r){
+    return '<li><div class="anchor-line"><span class="anchor-grade a">雙法共振</span>'+
+      '<span>西元 '+spanText(r.y0,r.y1)+'</span>'+
+      '<span class="anchor-rel">八字 '+r.bazi.gz+'・紫微 '+r.ziwei.ganZhi+' '+ziweiHitText(r.ziwei.hits)+'</span></div></li>';
+  },(bw&&zw)?'兩法大限的財運訊號沒有重疊年份':'需八字與紫微皆排盤完成');
+  var rYr=wealthListHtml('雙法財運共振・流年',snap.annual,function(r){
+    return '<li><div class="anchor-line"><span class="anchor-grade a">雙法共振</span>'+
+      '<span>'+r.year+'</span>'+
+      '<span class="anchor-rel">八字 '+r.bazi.gz+'・紫微 '+ziweiHitText(r.ziwei.hits)+'</span></div></li>';
+  },(bw&&zw)?'兩法流年的財運訊號沒有重疊年份':'需八字與紫微皆排盤完成');
+  $('wealthGrid').innerHTML=
+    '<div class="sync-mode"><h4>雙法財運共振</h4><div class="sync-cols">'+rDa+rYr+'</div></div>'+
+    '<div class="sync-mode"><h4>八字財運訊號</h4><div class="sync-cols">'+bDa+bYr+'</div></div>'+
+    '<div class="sync-mode"><h4>紫微財運訊號</h4><div class="sync-cols">'+zDa+zYr+'</div></div>';
+}
+function renderSyncAlerts(){
+  var B=STATE.bazi&&STATE.bazi.ok?STATE.bazi.data:null;
+  var birthY=B?B.birthYear:parseInt($('f-year').value);
+  $('syncCard').style.display='';
+  if(!birthY){
+    $('ovPdf').disabled=true;
+    $('syncGrid').innerHTML='<div class="sync-wait">尚未排盤——完成三法合盤後，這裡會顯示太乙錨定的可信區段。</div>';
+    renderTurningAnalysis();
+    renderWealthSignals();
+    return;
+  }
+  var da=syncModeHtml('daen','大限運勢',6,birthY);
+  var yr=syncModeHtml('year','連續流年形成的中期運勢帶',6,birthY);
+  $('syncGrid').innerHTML=da+yr;
+  renderTurningAnalysis();
+  renderWealthSignals();
+  /* PDF 報告須同時具備大限、流年各三條核心線，避免輸出不完整報告。 */
+  $('ovPdf').disabled=PDF_BUSY||!(coreThreeSeries('daen').length===3&&coreThreeSeries('year').length===3);
+}
+function syncSnapshotRows(rows,birthY){
+  return rows.map(function(b){
+    return { y0:b.y0, y1:b.y1, kind:b.kind, grade:b.grade||null, confidence:b.confidence,
+             strength:b.strength,
+             basis:b.basis||null,
+             nearSlopeCount:b.nearSlopeCount,
+             slopeStrength:b.slopeStrength,
+             trendStart:b.trendStart, trendEnd:b.trendEnd,
+             pairs:b.pairs?JSON.parse(JSON.stringify(b.pairs)):null,
+             supporters:(b.supporters||[]).slice(),
+             companions:(b.companions||[]).slice(),
+             realAge0:b.y0-birthY, realAge1:b.y1-birthY,
+             virtualAge0:b.y0-birthY+1, virtualAge1:b.y1-birthY+1 };
+  });
+}
+function syncModeSnapshot(mode,limit,birthY){
+  var core=coreThreeSeries(mode);
+  if(core.length!==3) return null;
+  var bands=buildAnchoredBands(mode,core,new Date().getFullYear());
+  var up=pickAnchoredBands(bands,'up',limit),down=pickAnchoredBands(bands,'down',limit);
+  return { limit:limit, up:syncSnapshotRows(up,birthY), down:syncSnapshotRows(down,birthY) };
+}
+function buildSyncSnapshot(){
+  var B=STATE.bazi&&STATE.bazi.ok?STATE.bazi.data:null;
+  var birthY=B?B.birthYear:parseInt($('f-year').value);
+  if(!birthY) return null;
+  return { version:'taiyi-anchored-zones/v1', deadband:DEADBAND,
+           displayOrder:'chronological-after-grade-confidence-selection',
+           grades:{A:'both-support-70',B:'one-support-70',C:'partial-support-35',conflict:'both-opposition-35'},
+           weights:{daen:{direction:40,position:35,turn:25},year:{direction:25,position:50,turn:25}},
+           daenRule:'taiyi-anchor-slope-primary', yearRule:'taiyi-anchor-future-position-primary-3y-smooth',
+           futureFromYear:new Date().getFullYear(), slopeEpsilon:SLOPE_EPS,
+           daen:syncModeSnapshot('daen',6,birthY),
+           year:syncModeSnapshot('year',6,birthY) };
+}
+
+/* ---------- 明細 ---------- */
+var LBL_TXT={auspicious:'吉年',caution:'功課年',mixed:'混局年',normal:'平年'};
+var LBL_CLS={auspicious:'aus',caution:'cau',mixed:'mix',normal:''};
+function showDetail(yr){
+  STATE.sel=yr;
+  var Z=STATE.ziwei&&STATE.ziwei.ok?STATE.ziwei.data:null;
+  var B=STATE.bazi&&STATE.bazi.ok?STATE.bazi.data:null;
+  var html='<span class="yr">西元 '+yr+'</span>';
+  if(Z){
+    var dr=null;
+    (Z.daen||[]).forEach(function(r){
+      var y0=Z.lunarBirthYear+r.start-1, y1=Z.lunarBirthYear+r.end;
+      if(yr>=y0&&yr<y1) dr=r;
+    });
+    if(dr){
+      html+='<br>紫微大限｜'+dr.ganZhi+'（'+dr.start+'-'+dr.end+'歲 · '+dr.palaceName+'）· 能量分 '+dr.score+
+            '<span class="tag" style="color:'+dr.clsColor+';border-color:'+dr.clsColor+'">'+dr.clsWord+'</span>'+
+            (dr.isCur?'<span class="tag">今</span>':'')+(dr.isShen?'<span class="tag">身宮</span>':'')+
+            '<br><span style="font-size:.8rem;color:var(--muted)">'+dr.advice+'</span>';
+    }
+    var zp=null;
+    (Z.years||[]).forEach(function(p){ if(p.year===yr) zp=p; });
+    if(zp){
+      html+='<br>紫微流年｜'+zp.liuGZ+'年 · 虛歲 '+zp.age+' · 能量分 '+zp.score+
+            '<span class="tag '+LBL_CLS[zp.label]+'">'+LBL_TXT[zp.label]+'</span>';
+    }else if(!dr){
+      html+='<br>紫微｜此年不在曲線範圍（1 歲起至末限）';
+    }
+  }
+  if(B){
+    var bs=null;
+    B.pillars.forEach(function(p){
+      var xs=B.birthYear+p.startAge;
+      if(yr>=xs&&yr<xs+10) bs=p;
+    });
+    if(bs){
+      var pgz=bs.gz||bs.pillar;
+      html+='<br>八字大運｜'+pgz+'（'+(Math.round(bs.startAge*10)/10)+'歲起）· 五構面分 '+(bs.score>0?'+':'')+bs.score+
+            (B.curGz===pgz?'<span class="tag">現行大運</span>':'');
+      if(bs.parts&&bs.parts.length){
+        html+='<br><span style="font-size:.78rem;color:var(--muted)">分項：'+
+              bs.parts.map(function(x){ return x.label+(x.delta>0?'+':'')+x.delta; }).join('　')+'</span>';
+      }
+    }else{
+      html+='<br>八字大運｜此年尚未起運或超出十步大運範圍';
+    }
+    var ba=null;
+    (B.annual||[]).forEach(function(a){ if(a.year===yr) ba=a; });
+    if(ba){
+      html+='<br>八字流年｜'+ba.gz+'年 · v2 綜合分 '+(ba.score>0?'+':'')+ba.score+
+            (ba.luckGz?' · 所處大運 '+ba.luckGz+'（大運分 '+(ba.luckScore>0?'+':'')+ba.luckScore+'，取半）':'');
+      if(ba.parts&&ba.parts.length){
+        html+='<br><span style="font-size:.78rem;color:var(--muted)">流年分項：'+
+              ba.parts.map(function(x){ return x.label+(x.delta>0?'+':'')+x.delta; }).join('　')+'</span>';
+      }
+    }else if(B.annualTruncated&&B.annual&&B.annual.length&&yr>B.annual[B.annual.length-1].year){
+      html+='<br>八字流年｜'+yr+' 年超出節氣資料範圍（截至 '+B.annual[B.annual.length-1].year+'）';
+    }
+  }
+  (STATE.ext||[]).forEach(function(s){
+    if(s.segments&&s.segments.length&&s.boundaries&&s.boundaries.length){
+      // 段式序列（如限例太乙）：以段起年界定所在段，末段長度由歲段推得
+      var seg=null;
+      s.boundaries.forEach(function(b,k){
+        var y0=b.year;
+        var y1=(k+1<s.boundaries.length)?s.boundaries[k+1].year
+              :(y0+((s.segments[k]?(s.segments[k].end-s.segments[k].start+1):10)));
+        if(yr>=y0&&yr<y1) seg=s.segments[k];
+      });
+      if(seg) html+='<br>'+s.label+'｜'+seg.label+'段 · 原始分 '+seg.value;
+      return;
+    }
+    // 逐年序列（如行年趨勢）：取該年點值
+    var hit=null;
+    (s.points||[]).forEach(function(p){ if(Math.round(p.year)===yr) hit=p; });
+    if(hit) html+='<br>'+s.label+'｜原始分 '+hit.value;
+  });
+  $('ovDetail').innerHTML=html;
+}
+
+var SAVE_LEGACY=false;   /* 讀入 v1 舊存檔時為 true，區段標示「舊版口徑」 */
+$('ovZiweiMode').onchange=function(){ STATE.zmode=$('ovZiweiMode').value; renderOverlay(); };
+
+/* ============================================================
+   存檔／讀取（契約 xiaoliu.hebing-save/v2；v1 唯讀相容）
+   v0.9.28 起升 v2：可信度語意由「最強支持線分數」改為「支持減反向」，
+   band 新增 pairs.bazi.reliability / scoreRaw / oppositionRaw，
+   並新增 wealthResonance 財運訊號快照。讀到 v1 舊檔時照原值呈現、
+   標示「舊版口徑」，不以新公式重算。
+   存：輸入＋雙法曲線資料＋擴充序列＋共振快照（可供日後入庫）。
+   讀：還原表單與模式後，一律以引擎重算為準（引擎具決定性；
+       檔內 curves 僅作歸檔對照，不直接拿來畫圖）。
+   ============================================================ */
+function nowStamp(){
+  var d=new Date();
+  var p=function(n){ return (n<10?'0':'')+n; };
+  return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate());
+}
+function safeName(s){
+  return (s||'未命名').replace(/[\\/:*?"<>|\s]+/g,'_').slice(0,30);
+}
+function download(filename, blob){
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function currentInput(){
+  return {
+    name:$('f-name').value||'未命名',
+    gender:$('f-gender').value,
+    y:parseInt($('f-year').value), m:parseInt($('f-month').value), d:parseInt($('f-day').value),
+    h:parseInt($('f-hour').value),
+    lateZi:$('f-latezi').checked,
+    leapRule:$('f-leap').value
+  };
+}
+$('f-save').onclick=function(){
+  if(!(STATE.bazi&&STATE.bazi.ok)&&!(STATE.ziwei&&STATE.ziwei.ok)) return;
+  var reso=resonance(buildSeries());
+  var anchored=buildSyncSnapshot();
+  var payload={
+    schema:'xiaoliu.hebing-save/v2',
+    savedAt:new Date().toISOString(),
+    input:currentInput(),
+    zmode:STATE.zmode,
+    curves:{
+      bazi: STATE.bazi&&STATE.bazi.ok?STATE.bazi.data:null,
+      ziwei: STATE.ziwei&&STATE.ziwei.ok?STATE.ziwei.data:null,
+      ext: STATE.ext
+    },
+    resonance: reso?{ y0:reso.y0, y1:reso.y1, pairs:reso.pairs, bands:reso.bands,
+                      syncAlerts:anchored, taiyiAnchoredZones:anchored,
+                      turningAnalysis:buildTurningSnapshot(),
+                      annualExtrema:buildAnnualExtremaSnapshot(),
+                      wealthResonance:buildWealthSnapshot() }:null
+  };
+  download('hebing-'+safeName(payload.input.name)+'-'+nowStamp()+'.json',
+    new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+};
+$('f-load').onclick=function(){ $('f-load-file').click(); };
+$('f-load-file').onchange=function(ev){
+  var file=ev.target.files&&ev.target.files[0];
+  if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(){
+    try{
+      var p=JSON.parse(reader.result);
+      if(p.schema!=='xiaoliu.hebing-save/v2'&&p.schema!=='xiaoliu.hebing-save/v1')
+        throw new Error('不是合盤存檔（schema 不符）');
+      SAVE_LEGACY=(p.schema==='xiaoliu.hebing-save/v1');
+      var i=p.input;
+      $('f-name').value=i.name||''; $('f-gender').value=i.gender;
+      $('f-year').value=i.y; $('f-month').value=i.m; $('f-day').value=i.d;
+      $('f-hour').value=String(i.h); $('f-latezi').checked=!!i.lateZi;
+      if(i.leapRule) $('f-leap').value=i.leapRule;
+      if(p.zmode){ STATE.zmode=p.zmode; $('ovZiweiMode').value=p.zmode; }
+      $('f-status').textContent='已讀取存檔，重新排盤中…（以引擎重算為準）';
+      $('f-go').onclick ? $('f-go').click() : null;
+    }catch(e){
+      $('f-status').innerHTML='<span class="err">讀檔失敗：'+e.message+'</span>';
+    }
+    ev.target.value='';
+  };
+  reader.readAsText(file);
+};
+
+/* ---------- 輸出圖檔 ---------- */
+function chartSvgEl(){ return $('ovChart').querySelector('svg'); }
+function svgStandalone(){
+  var svg=chartSvgEl(); if(!svg) return null;
+  var clone=svg.cloneNode(true);
+  /* 匯出檔不需要網頁上的透明點擊層；移除可縮小檔案，也避免部分 SVG 光柵器把 transparent 誤畫成黑色。 */
+  clone.querySelectorAll('.ov-hit').forEach(function(el){el.remove();});
+  clone.setAttribute('font-family',"'BiauKaiWeb','cwTeXKai','Noto Serif TC','Kaiti TC',serif");
+  // 底色（原圖透明，單獨開檔時鋪宣紙色）
+  var vb=(clone.getAttribute('viewBox')||'0 0 920 360').split(/\s+/);
+  var rect='<rect x="'+vb[0]+'" y="'+vb[1]+'" width="'+vb[2]+'" height="'+vb[3]+'" fill="#f7f1e4"/>';
+  clone.innerHTML=rect+clone.innerHTML;
+  var xml=new XMLSerializer().serializeToString(clone);
+  // 命名空間防呆：序列化通常已帶 xmlns；缺了才補，避免重複屬性（嚴格解析器會拒收）
+  if(!/^<svg[^>]*\sxmlns=/.test(xml)){
+    xml=xml.replace(/^<svg/,'<svg xmlns="http://www.w3.org/2000/svg"');
+  }
+  return { xml:xml, w:+vb[2], h:+vb[3] };
+}
+function exportTitle(){
+  var i=currentInput();
+  var HB=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  return i.name+'　'+i.y+'-'+(i.m<10?'0':'')+i.m+'-'+(i.d<10?'0':'')+i.d+' '+HB[i.h]+'時'+(i.lateZi?'(晚子)':'')+
+         '　'+(i.gender==='M'?'男':'女')+'　·　八字 × 紫微 × 太乙 合盤　·　'+nowStamp();
+}
+$('ovSvg').onclick=function(){
+  var s=svgStandalone(); if(!s) return;
+  download('hebing-chart-'+safeName($('f-name').value)+'-'+nowStamp()+'.svg',
+    new Blob([s.xml],{type:'image/svg+xml'}));
+};
+$('ovPng').onclick=function(){
+  var s=svgStandalone(); if(!s) return;
+  var SCALE=2, TITLE_H=44;
+  var img=new Image();
+  img.onload=function(){
+    try{
+      var cv=document.createElement('canvas');
+      cv.width=s.w*SCALE; cv.height=(s.h+TITLE_H)*SCALE;
+      var ctx=cv.getContext('2d');
+      ctx.fillStyle='#f7f1e4'; ctx.fillRect(0,0,cv.width,cv.height);
+      ctx.fillStyle='#283a2f';
+      ctx.font=(13*SCALE)+"px 'BiauKaiWeb','cwTeXKai','Noto Serif TC',serif";
+      ctx.textBaseline='middle';
+      ctx.fillText(exportTitle(), 24*SCALE, TITLE_H*SCALE/2);
+      ctx.drawImage(img, 0, TITLE_H*SCALE, s.w*SCALE, s.h*SCALE);
+      cv.toBlob(function(blob){
+        if(blob) download('hebing-chart-'+safeName($('f-name').value)+'-'+nowStamp()+'.png', blob);
+        else $('f-status').innerHTML='<span class="err">PNG 產生失敗，請改用輸出 SVG</span>';
+      },'image/png');
+    }catch(e){
+      $('f-status').innerHTML='<span class="err">PNG 產生失敗（'+e.message+'），請改用輸出 SVG</span>';
+    }
+  };
+  img.onerror=function(){ $('f-status').innerHTML='<span class="err">PNG 產生失敗，請改用輸出 SVG</span>'; };
+  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s.xml);
+};
+
+/* ---------- 輸出曲線 PDF 報告（A4 橫式，中文以畫布光柵化避免字型遺失） ---------- */
+var REPORT_W=1684, REPORT_H=1190;
+function reportFont(ctx,size,weight,color){
+  ctx.font=(weight||'400')+' '+size+"px 'BiauKaiWeb','cwTeXKai','Noto Serif TC','Kaiti TC',serif";
+  ctx.fillStyle=color||'#283a2f';
+  ctx.textBaseline='top';
+}
+function reportRoundRect(ctx,x,y,w,h,r,fill,stroke){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+  if(fill){ctx.fillStyle=fill;ctx.fill();}
+  if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}
+}
+function reportLines(ctx,text,maxWidth){
+  var out=[];
+  String(text||'').split('\n').forEach(function(part){
+    if(!part){out.push('');return;}
+    var line='';
+    Array.from(part).forEach(function(ch){
+      var next=line+ch;
+      if(line&&ctx.measureText(next).width>maxWidth){out.push(line);line=ch;}
+      else line=next;
+    });
+    if(line) out.push(line);
+  });
+  return out;
+}
+function reportText(ctx,text,x,y,maxWidth,lineHeight,maxLines){
+  var lines=reportLines(ctx,text,maxWidth);
+  if(maxLines&&lines.length>maxLines){
+    lines=lines.slice(0,maxLines);
+    var last=lines.length-1;
+    while(lines[last]&&ctx.measureText(lines[last]+'…').width>maxWidth) lines[last]=lines[last].slice(0,-1);
+    lines[last]+='…';
+  }
+  lines.forEach(function(line,i){ctx.fillText(line,x,y+i*lineHeight);});
+  return y+lines.length*lineHeight;
+}
+function reportCanvas(title,kicker,pageNo){
+  var cv=document.createElement('canvas'); cv.width=REPORT_W; cv.height=REPORT_H;
+  var ctx=cv.getContext('2d');
+  ctx.fillStyle='#f7f1e4'; ctx.fillRect(0,0,REPORT_W,REPORT_H);
+  ctx.fillStyle='#283a2f'; ctx.fillRect(0,0,REPORT_W,20);
+  reportFont(ctx,21,'600','#8a8071'); ctx.fillText(kicker,70,48);
+  reportFont(ctx,47,'600','#283a2f'); ctx.fillText(title,70,86);
+  ctx.strokeStyle='#b99b62'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(70,158); ctx.lineTo(1614,158); ctx.stroke();
+  reportFont(ctx,18,'400','#8a8071');
+  ctx.fillText('本報告呈現三法曲線、太乙錨定可信區段與流年高低點呼應，供規劃參考；不作單一吉凶宣判。',70,1140);
+  ctx.textAlign='right'; ctx.fillText('第 '+pageNo+' 頁',1614,1140); ctx.textAlign='left';
+  return cv;
+}
+function reportPersonLine(){
+  var i=currentInput();
+  var HB=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+  return (i.name||'未命名')+'　｜　'+i.y+'-'+(i.m<10?'0':'')+i.m+'-'+(i.d<10?'0':'')+i.d+'　'+HB[i.h]+'時'+
+    (i.lateZi?'（晚子）':'')+'　｜　'+(i.gender==='M'?'男':'女')+'　｜　製表日 '+nowStamp();
+}
+function reportLegendItem(ctx,x,y,color,label){
+  ctx.strokeStyle=color; ctx.lineWidth=6; ctx.beginPath(); ctx.moveTo(x,y+14); ctx.lineTo(x+44,y+14); ctx.stroke();
+  reportFont(ctx,21,'400','#4e5b51'); ctx.fillText(label,x+56,y);
+  return x+56+ctx.measureText(label).width+44;
+}
+function drawReportChartPage(img,mode,pageNo){
+  var daen=mode==='daen';
+  var cv=reportCanvas(daen?'大限曲線圖':'流年曲線圖','八字 × 紫微 × 太乙｜三法合盤曲線報告',pageNo);
+  var ctx=cv.getContext('2d');
+  reportFont(ctx,24,'400','#516b55'); ctx.fillText(reportPersonLine(),70,178);
+  reportRoundRect(ctx,70,225,1544,690,16,'#fffdf6','#e3d9c3');
+  ctx.drawImage(img,102,260,1480,579);
+  var x=112, y=860;
+  if(daen){
+    x=reportLegendItem(ctx,x,y,'#b99b62','八字大運');
+    x=reportLegendItem(ctx,x,y,'#6b5b8f','紫微大限');
+    reportLegendItem(ctx,x,y,'#7d5a44','限例太乙');
+  }else{
+    x=reportLegendItem(ctx,x,y,'#b99b62','八字流年');
+    x=reportLegendItem(ctx,x,y,'#6b5b8f','紫微逐年');
+    reportLegendItem(ctx,x,y,'#46708a','太乙行年');
+  }
+  reportFont(ctx,22,'600','#516b55'); ctx.fillText('讀圖說明',82,946);
+  reportFont(ctx,21,'400','#665f55');
+  reportText(ctx,daen
+    ?'可信區段以太乙為主線：大限先比較斜率，再由八字、紫微的位置與同方向轉折補強證據。每段分為 A 強共識、B 雙法支持、C 部分支持或衝突區。'
+    :'流年可信區只列今年起的未來，先看太乙所在高低位置，再用三年平滑方向與同方向轉折交叉佐證；至少連續兩年才列出，避免零散單年點。',
+    82,986,1510,32,3);
+  return cv;
+}
+function captureReportCharts(){
+  var oldMode=STATE.zmode, oldSelect=$('ovZiweiMode').value, oldSel=STATE.sel;
+  var charts={};
+  try{
+    ['daen','year'].forEach(function(mode){
+      STATE.zmode=mode; $('ovZiweiMode').value=mode; renderOverlay();
+      charts[mode]=svgStandalone();
+    });
+  }finally{
+    STATE.zmode=oldMode; $('ovZiweiMode').value=oldSelect||oldMode; STATE.sel=oldSel; renderOverlay();
+  }
+  if(!charts.daen||!charts.year) throw new Error('大限或流年曲線尚未完成');
+  return charts;
+}
+function loadReportSvgImage(s){
+  return new Promise(function(resolve,reject){
+    var img=new Image();
+    img.onload=function(){resolve(img);};
+    img.onerror=function(){reject(new Error('曲線圖轉換失敗'));};
+    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s.xml);
+  });
+}
+function reportBandLine(b,mode,up){
+  var line='西元 '+spanText(b.y0,b.y1)+'｜約實歲 '+spanText(b.realAge0,b.realAge1)+'｜虛歲 '+spanText(b.virtualAge0,b.virtualAge1);
+  line+='｜'+anchorGradeText(b.grade)+'｜可信度 '+b.confidence+'%';
+  return line;
+}
+function reportBandReading(mode,up,b){
+  if(b.grade==='conflict') return '太乙訊號與八字、紫微均有明顯反向證據；保留太乙觀察，但不把本段當作三法共同結論。';
+  var trust=b.grade==='A'?'三法證據完整重疊，可優先列為高可信線索。':
+    (b.grade==='B'?'太乙獲八字或紫微其中一法完整支持，可列為重要線索。':'目前只有方向或位置等部分支持，宜先觀察、不宜單獨重押。');
+  var action=up?'順勢規劃仍應分段驗證並保留彈性。':'宜放寬時程、分散風險並預留時間與資源緩衝。';
+  return trust+action;
+}
+function reportSyncCopy(mode,up){
+  if(mode==='daen') return up
+    ?{title:'運勢上升強旺期',remind:'代表整體運勢逐步往上、力量漸強；八字、紫微再依方向、位置與轉折提供佐證。'}
+    :{title:'運勢走弱低潮期',remind:'代表整體運勢逐步走弱、較容易面臨壓力與低潮；宜穩健調整並預留緩衝。'};
+  return up
+    ?{title:'連續流年形成的強旺帶',remind:'代表連續多個未來年份位於較有利、能量較強的位置；適合把握機會並分段推進。'}
+    :{title:'連續流年形成的低潮帶',remind:'代表連續多個未來年份位於較弱、較需保守的位置；宜降低風險並預留時間與資源。'};
+}
+function drawReportSyncColumn(ctx,x,y,w,h,mode,up,rows){
+  var color=up?'#3f7d36':'#a4762e', fill=up?'#f0f6ed':'#faf3e6';
+  reportRoundRect(ctx,x,y,w,h,16,fill,up?'#bfd1b8':'#d9c49b');
+  var cp=reportSyncCopy(mode,up);
+  reportFont(ctx,29,'600',color); ctx.fillText(cp.title,x+28,y+24);
+  reportFont(ctx,20,'400','#6c675e');
+  var cy=reportText(ctx,cp.remind,x+28,y+67,w-56,28,3)+12;
+  ctx.strokeStyle=up?'#c9d8c3':'#dfcfad'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+28,cy); ctx.lineTo(x+w-28,cy); ctx.stroke();
+  cy+=18;
+  if(!rows||!rows.length){
+    reportFont(ctx,24,'400','#8a8071'); ctx.fillText('無符合區段',x+28,cy+12); return;
+  }
+  rows.forEach(function(b,idx){
+    if(cy>y+h-90) return;
+    ctx.fillStyle=color; ctx.beginPath(); ctx.arc(x+38,cy+13,8,0,Math.PI*2); ctx.fill();
+    reportFont(ctx,21,'600','#283a2f');
+    cy=reportText(ctx,(idx+1)+'. '+reportBandLine(b,mode,up),x+58,cy,w-86,29,2)+3;
+    reportFont(ctx,19,'400','#665f55');
+    cy=reportText(ctx,reportBandReading(mode,up,b),x+58,cy,w-86,27,2)+11;
+  });
+}
+function drawReportSyncPage(mode,snapshot,pageNo){
+  var daen=mode==='daen';
+  var cv=reportCanvas('太乙錨定可信區段｜'+(daen?'大限運勢':'連續流年形成的中期運勢帶'),'八字 × 紫微 × 太乙｜三法合盤曲線報告',pageNo);
+  var ctx=cv.getContext('2d');
+  reportFont(ctx,22,'400','#665f55');
+  reportText(ctx,daen
+    ?'以太乙為主線；大限方向／位置／轉折權重為 40／35／25。A 為八字、紫微皆強支持，B 為至少一法完整支持，C 為部分支持。'
+    :'只列今年起的未來；位置／三年平滑方向／轉折權重為 50／25／25。連續至少兩年才列出，避免把一段趨勢拆成零散單年。',
+    70,178,1544,31,2);
+  drawReportSyncColumn(ctx,70,250,752,850,mode,true,snapshot.up);
+  drawReportSyncColumn(ctx,862,250,752,850,mode,false,snapshot.down);
+  return cv;
+}
+function reportExtremaSignalText(signals){
+  if(!signals||!signals.length) return '';
+  var seen={},labels=[];
+  signals.forEach(function(s){
+    var label=(s.key==='luMaThreeWay'||s.key==='luMaTwoWay')?'祿馬交馳':
+      (s.key==='luZhuAndFeiLu'?'祿主飛祿':null);
+    if(label&&!seen[label]){seen[label]=true;labels.push(label);}
+  });
+  return labels.length?'　'+labels.join('　'):'';
+}
+function reportExtremaMatchLine(name,match){
+  if(!match) return '';
+  var yr=match.plateauStart===match.plateauEnd?String(match.year):spanText(match.plateauStart,match.plateauEnd);
+  return name+' '+yr+'（'+extremaLagText(match.lag)+'）'+reportExtremaSignalText(match.specialSignals);
+}
+function drawReportExtremaColumn(ctx,x,y,w,h,kind,rows){
+  var peak=kind==='peak',color=peak?'#3f7d36':'#9a6334',fill=peak?'#f0f6ed':'#faf1e8';
+  reportRoundRect(ctx,x,y,w,h,16,fill,peak?'#bfd1b8':'#d9bea3');
+  reportFont(ctx,28,'600',color);
+  ctx.fillText(peak?'太乙最高 6 個局部高點':'太乙最低 6 個局部低點',x+26,y+22);
+  ctx.strokeStyle=peak?'#c9d8c3':'#ddc9b5';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(x+26,y+66);ctx.lineTo(x+w-26,y+66);ctx.stroke();
+  if(!rows||!rows.length){
+    reportFont(ctx,22,'400','#8a8071');
+    reportText(ctx,'共同資料範圍內沒有八字或紫微呼應的'+(peak?'高點':'低點')+'。',x+26,y+92,w-52,30,3);
+    return;
+  }
+  var rowH=(h-82)/Math.max(6,rows.length),cy=y+82;
+  rows.forEach(function(row,idx){
+    if(idx){ctx.strokeStyle=peak?'#d5e0d0':'#e5d5c5';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x+26,cy-7);ctx.lineTo(x+w-26,cy-7);ctx.stroke();}
+    reportFont(ctx,18,'600','#283a2f');
+    var source=(idx+1)+'. 太乙'+(peak?'高點':'低點')+'｜西元 '+extremaSpanText(row)+'｜實歲 '+row.realAge+'／虛歲 '+row.virtualAge+
+      reportExtremaSignalText(row.specialSignals);
+    var ty=reportText(ctx,source,x+26,cy,w-52,24,2)+3;
+    reportFont(ctx,17,'400','#665f55');
+    if(row.bazi) ty=reportText(ctx,reportExtremaMatchLine('八字',row.bazi),x+48,ty,w-74,23,1)+1;
+    if(row.ziwei) reportText(ctx,reportExtremaMatchLine('紫微',row.ziwei),x+48,ty,w-74,23,1);
+    cy+=rowH;
+  });
+}
+function drawReportExtremaPage(snapshot,pageNo){
+  var cv=reportCanvas('太乙流年高低點 ±1 年呼應','八字 × 紫微 × 太乙｜三法合盤曲線報告',pageNo);
+  var ctx=cv.getContext('2d');
+  reportFont(ctx,21,'400','#516b55');ctx.fillText(reportPersonLine(),70,174);
+  reportFont(ctx,19,'400','#665f55');
+  reportText(ctx,'以太乙最高／最低各 6 個局部點為錨，只列八字或紫微在前後 1 年內出現同類高低點的年份；'+
+    '佐證高點須在高檔、低點須在低檔。入選後依年齡排列；共同年份 '+snapshot.commonRange.y0+'–'+snapshot.commonRange.y1+'，連續同值平台只算 1 點。',70,211,1544,27,2);
+  drawReportExtremaColumn(ctx,70,278,752,815,'peak',snapshot.peaks);
+  drawReportExtremaColumn(ctx,862,278,752,815,'trough',snapshot.troughs);
+  return cv;
+}
+function reportPairSummary(pair){
+  var m=pair.match;
+  return '轉折吻合 '+(m.matchRate===null?'—':m.matchRate+'%')+'（'+m.matched+'/'+m.total+'）\n'+
+    '領先／同期／落後 '+m.lead+'／'+m.same+'／'+m.lag+'；'+dominantTiming(pair)+'\n'+
+    '同期相關 '+fmtTurnNumber(pair.zeroR)+'；最佳相關 '+fmtTurnNumber(pair.bestR)+'（'+bestLagText(pair)+'）\n'+
+    '方向一致率 '+(pair.direction.rate===null?'—':pair.direction.rate+'%')+'；綜合貼合度 '+pair.fitScore;
+}
+function drawReportTurningPair(ctx,x,y,w,name,pair){
+  reportRoundRect(ctx,x,y,w,210,15,'#fffdf8','#e3d9c3');
+  reportFont(ctx,27,'600','#283a2f');ctx.fillText('太乙 × '+name,x+24,y+20);
+  reportRoundRect(ctx,x+w-178,y+17,154,38,19,'#516b55',null);
+  reportFont(ctx,22,'600','#fff');
+  ctx.textAlign='center';ctx.fillText('貼合度 '+pair.fitScore,x+w-101,y+23);ctx.textAlign='left';
+  reportFont(ctx,20,'400','#665f55');
+  reportText(ctx,reportPairSummary(pair),x+24,y+70,w-48,29,4);
+}
+function reportTurnMatch(m){
+  if(!m||m.targetYear===null) return '無同方向對應';
+  return fmtYear(m.targetYear)+'｜'+lagText(m.lag,'');
+}
+function drawReportTurningPage(mode,snap,pageNo){
+  var daen=mode==='daen';
+  var cv=reportCanvas('轉折與領先／落後分析｜'+(daen?'大限':'流年'),'八字 × 紫微 × 太乙｜三法合盤曲線報告',pageNo);
+  var ctx=cv.getContext('2d'),bp=snap.pairs.bazi,zp=snap.pairs.ziwei;
+  var fit=snap.comparison==='close'?'太乙與八字、紫微貼合度接近':(snap.comparison==='bazi'?'太乙目前較貼近八字':'太乙目前較貼近紫微');
+  reportFont(ctx,22,'400','#665f55');
+  reportText(ctx,fit+'。配對差＝另一法轉折年－太乙轉折年；正值代表太乙領先，±1 年歸為同期。'+
+    (daen?'大限為粗顆粒節點，領先年數只作區段近似。':'流年先做三年移動平均，並要求轉向至少維持兩年。'),70,178,1544,31,2);
+  drawReportTurningPair(ctx,70,250,752,'八字',bp);
+  drawReportTurningPair(ctx,862,250,752,'紫微',zp);
+  var x0=70,y0=500,widths=[255,170,520,529],heads=['太乙轉折','類型','八字對應','紫微對應'];
+  ctx.fillStyle='#516b55';ctx.fillRect(x0,y0,1544,42);
+  var xx=x0;
+  heads.forEach(function(h,i){reportFont(ctx,20,'600','#fff');ctx.fillText(h,xx+12,y0+9);xx+=widths[i];});
+  var rows=snap.rows.slice(0,11),rowH=49;
+  rows.forEach(function(r,i){
+    var yy=y0+42+i*rowH;
+    ctx.fillStyle=i%2?'#fffdf8':'#f7f3e9';ctx.fillRect(x0,yy,1544,rowH);
+    reportFont(ctx,18,'400','#4e5b51');
+    var vals=[fmtYear(r.year)+'｜實歲 '+fmtYear(r.realAge)+'／虛歲 '+fmtYear(r.virtualAge),r.label,reportTurnMatch(r.bazi),reportTurnMatch(r.ziwei)];
+    var px=x0;vals.forEach(function(v,k){reportText(ctx,v,px+12,yy+12,widths[k]-22,24,1);px+=widths[k];});
+  });
+  if(snap.rows.length>rows.length){
+    reportFont(ctx,18,'400','#8a8071');ctx.fillText('另有 '+(snap.rows.length-rows.length)+' 筆轉折明細，請於工具畫面展開查看。',70,1090);
+  }
+  return cv;
+}
+function buildCurvePdfReport(autoSave){
+  var PdfCtor=window.jspdf&&window.jspdf.jsPDF;
+  if(!PdfCtor) return Promise.reject(new Error('PDF 元件未載入，請重新開啟工具後再試'));
+  var snapshot=buildSyncSnapshot();
+  if(!snapshot||!snapshot.daen||!snapshot.year) return Promise.reject(new Error('三法大限或流年資料尚未齊備'));
+  var annualExtrema=buildAnnualExtremaSnapshot();
+  if(!annualExtrema) return Promise.reject(new Error('太乙流年高低點呼應資料尚未齊備'));
+  var charts=captureReportCharts();
+  return Promise.all([loadReportSvgImage(charts.daen),loadReportSvgImage(charts.year)]).then(function(imgs){
+    var pages=[
+      drawReportChartPage(imgs[0],'daen',1),
+      drawReportChartPage(imgs[1],'year',2),
+      drawReportSyncPage('daen',snapshot.daen,3),
+      drawReportSyncPage('year',snapshot.year,4),
+      drawReportExtremaPage(annualExtrema,5)
+    ];
+    var pdf=new PdfCtor({orientation:'landscape',unit:'mm',format:'a4',compress:true});
+    pages.forEach(function(cv,idx){
+      if(idx) pdf.addPage('a4','landscape');
+      pdf.addImage(cv.toDataURL('image/jpeg',0.92),'JPEG',0,0,297,210,undefined,'FAST');
+    });
+    if(pdf.setProperties) pdf.setProperties({
+      title:(currentInput().name||'未命名')+'｜八字 × 紫微 × 太乙 曲線報告',
+      subject:'大限曲線、流年曲線、太乙錨定可信區段與太乙流年高低點 ±1 年呼應',
+      creator:'小六太乙合盤工具'
+    });
+    var filename='hebing-curve-report-'+safeName($('f-name').value)+'-'+nowStamp()+'.pdf';
+    if(autoSave!==false) pdf.save(filename);
+    return {pdf:pdf,filename:filename,pageCount:pages.length,snapshot:snapshot,annualExtrema:annualExtrema};
+  });
+}
+$('ovPdf').onclick=function(){
+  if($('ovPdf').disabled) return Promise.resolve(null);
+  PDF_BUSY=true; $('ovPdf').disabled=true; $('ovPdf').textContent='PDF 製作中…';
+  $('f-status').textContent='正在製作曲線 PDF 報告（共 5 頁）…';
+  return buildCurvePdfReport(true).then(function(result){
+    $('f-status').textContent='曲線 PDF 報告已輸出：'+result.filename;
+    return result;
+  }).catch(function(e){
+    $('f-status').innerHTML='<span class="err">PDF 產生失敗：'+e.message+'</span>';
+    return null;
+  }).then(function(result){
+    PDF_BUSY=false; $('ovPdf').textContent='輸出曲線 PDF 報告'; renderSyncAlerts();
+    return result;
+  });
+};
+/* 唯讀診斷入口：讓隨附回歸測試可直接驗證同步區段規則，不接觸排盤狀態。 */
+window.__hebingDiagnostics=Object.freeze({
+  slopeOverlapBands:slopeOverlapBands,
+  daenPositionFallbackBands:daenPositionFallbackBands,
+  pickDaenHybridBands:pickDaenHybridBands,
+  futurePositionBands:futurePositionBands,
+  buildAnchoredBands:buildAnchoredBands,
+  pickAnchoredBands:pickAnchoredBands,
+  anchorBandGrade:anchorBandGrade,
+  localExtremaPoints:localExtremaPoints,
+  matchLocalExtreme:matchLocalExtreme,
+  taiyiSpecialSignalsForSpan:taiyiSpecialSignalsForSpan,
+  buildAnnualExtremaSnapshot:buildAnnualExtremaSnapshot,
+  syncSnapshotRows:syncSnapshotRows,
+  buildSyncSnapshot:buildSyncSnapshot,
+  turningPoints:turningPoints,
+  matchTurningPoints:matchTurningPoints,
+  turningPairAnalysis:turningPairAnalysis,
+  buildTurningSnapshot:buildTurningSnapshot,
+  buildCurvePdfReport:buildCurvePdfReport
+});
+})();
+</script>
+</body>
+</html>

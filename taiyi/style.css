@@ -1,0 +1,2775 @@
+    /* 這裡是 CSS 樣式區，可以控制網頁的外觀 */
+
+    @font-face {
+    font-family: 'BiauKaiWeb'; 
+    src: url('fonts/biaukai.ttf') format('truetype'); 
+    }
+
+    body {
+    font-family: 'BiauKaiWeb';
+    display: flex;
+    padding: 0px;
+    background-color: #ffffff;
+    }
+
+
+    .taiyi-container {
+        width: 800px;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    /* 修改：為動態文字加入過渡效果的基底 */
+    .dynamic-text {
+    font-family: 'BiauKaiWeb';
+    fill: #000000;
+    writing-mode: vertical-rl;
+    glyph-orientation-vertical: 0;
+
+    /* ▼▼▼ 動畫設定 ▼▼▼ */
+    opacity: 0; /* 預設為隱藏 (透明) */
+    transition: opacity 1.0s ease-out; /* 設定 1秒 的淡入時間，ease-out 讓結尾更柔和 */
+    }
+
+    /* 新增：當星星要顯示時，加上這個 class */
+    .star-visible {
+    opacity: 1; /* 變成不透明 (顯示) */
+    }
+
+    /* --- 紅色星形圖標樣式 --- */
+    .red-star-icon {
+    width: 14px;          /* 【可調整】設定星星圖片的寬度 */
+    height: 14px;         /* 【可調整】設定星星圖片的高度 */
+    vertical-align: middle; /* 讓星星圖片與旁邊的文字在垂直方向上對齊 */
+    margin-right: 4px;    /* 【可調整】設定星星與右邊文字的間距 */
+    }
+
+    /* 宮位星的樣式 */
+    .palace-name-style {
+        font-size: 14px;
+    }
+    /* 主要資訊的樣式 */
+    .main-info-style {
+        font-size: 14px;
+        fill: #f20000;
+        font-weight: bold;
+    }
+
+    /* 次要資訊的樣式 */
+    .sub-info-style {
+        font-size: 14px;
+        fill: #e58600;
+        font-weight: bold;
+    }
+    /* 年齡數字的專屬樣式 */
+    .age-limit-style {
+    font-size: 10px; 
+    fill: #2a2a2a;
+    font-weight: bold;  
+    }
+
+    /* --- 「行年歲數」的專屬樣式 --- */
+    .xing-nian-style {
+    font-size: 9px;    /* 【可調整】控制行年歲數的字體大小 */
+    fill: #4a008f;      /* 【可調整】控制行年歲數的字體顏色 (此為深紫色) */
+    font-weight: bold;
+    }
+
+    /* 身、日、時 的專屬樣式 */
+    .sdr-style {
+        font-size: 12px; 
+        fill: #ff0000;    
+        font-weight: bold; 
+    }
+    /* 太乙、文昌、始擊 的專屬樣式 */
+    .main-star-style {
+        font-size: 14px;  
+        fill: #680000;  
+        font-weight: bold;
+    }
+
+    /* 「定目」的專屬樣式 */
+    .ding-mu-style {
+    font-size: 14px;      /* 字體大小 */
+    fill: #814fb4;        /* 字體顏色 (範例為紫色，可自行修改) */
+    font-weight: bold;
+    }
+
+    /* 太歲、合神、計神 的專屬樣式 */
+    .deity-style {
+        font-size: 14px; 
+        fill: #027bb4; 
+        font-weight: bold;
+    }
+
+    /* 「小遊」的專屬樣式 */
+    .xiaoyou-style {
+        font-size: 14px;
+        fill: #89b700;
+        font-weight: bold;
+    }
+
+    /* 「大遊」的專屬樣式 */
+    .dayou-style {
+    font-size: 14px;
+    fill: #89b700;
+    font-weight: bold;
+    }
+
+    /* 「君基、臣基、民基」的專屬樣式 */
+    .ji-star-style {
+    font-size: 14px;
+    fill: #009b29; 
+    font-weight: bold;
+    }
+
+    /*「天乙、地乙、四神、飛符」的專屬樣式 */
+    .celestial-messenger-style {
+    font-size: 14px;
+    fill: #e500d2; 
+    font-weight: bold;
+    }
+
+    /* --- 「皇恩星」的專屬樣式 --- */
+    .huang-en-style {
+    font-size: 12px;    /* 【可調整】設定字體大小 */
+    fill: #DAA520;      /* 【可調整】設定字體顏色 (此為金色 GoldenRod) */
+    font-weight: bold;
+    }
+
+    /* 「陽九限」的專屬樣式 */
+    .yang-jiu-style {
+    font-size: 10px;      /* 字體大小 */
+    fill: #006ddbff;      /* 字體顏色 (範例為藍色，可自行修改) */
+    font-weight: bold;
+    }
+
+    /* 「百六限」的專屬樣式 */
+    .bai-liu-style {
+    font-size: 10px;      /* 字體大小 */
+    fill: #bf00b8ff;      /* 字體顏色 (範例為紫色，可自行修改) */
+    font-weight: bold;
+    }
+
+    /* 「大遊真限」的專屬樣式 */
+    .da-you-zhen-xian-style {
+    font-size: 10px;      /* 字體大小 */
+    fill: #501dd3;      /* 字體顏色 (範例為深紅色，可自行修改) */
+    font-weight: bold;
+    }
+
+    /* 「飛馬大限」的專屬樣式 */
+    .fei-ma-da-xian-style {
+    font-size: 10px;      /* 字體大小 */
+    fill: #008a8a;        /* 字體顏色 (範例為藍綠色，可自行修改) */
+    font-weight: bold;
+    }
+
+    /* 「飛祿大限」、「飛祿流年」的共用樣式 */
+   .fei-lu-da-xian-style,
+   .fei-lu-liu-nian-style { /* <-- 在這裡加上一行 */
+    font-size: 10px;
+    fill: #008a00; 
+    font-weight: bold;
+    }
+
+    /* 「飛馬大限」與「飛馬流年」的共用樣式 */
+    .fei-ma-da-xian-style,
+    .fei-ma-liu-nian-style {
+    font-size: 10px;     
+    fill: #008a8a;       
+    font-weight: bold;
+    }
+
+    /* 「黑符」的專屬樣式 */
+    .hei-fu-style {
+    font-size: 10px;      
+    fill: #2d2d2d;     
+    font-weight: bold;  
+    }
+
+
+    /* 圓心特殊宮位的文字樣式 */
+    .center-info-style {
+    font-size: 14px;      
+    fill: #e58600;        
+    font-weight: bold;
+    text-anchor: middle;  
+    }
+
+    /* 主客定算屬性文字樣式 */
+    .suan-attribute-style {
+    color: #6c757d; 
+    font-size: 11px; 
+    font-family: sans-serif; 
+    }
+
+    /* 「卦象簡釋」的專屬樣式 */
+    .hexagram-description-style {
+    font-size: 14px;          /* 字體可以稍微小一點 */
+    color: #1268ba;             /* 使用柔和的灰色，不搶主資訊風采 */
+    font-weight: normal;      /* 使用標準體重 */
+    }
+
+    /* 用於凸顯星曜的圓圈樣式 */
+    .highlight-circle {
+    fill: none;           /* 圓圈內部透明 */
+    stroke: #fe1500;      /* 圓圈邊框顏色 (您圖片中的橘紅色) */
+    stroke-width: 1px;    /* 圓圈邊框粗細 */
+    }
+
+    /* 當某個宮位被流年星曜觸發時，圓盤該處會發光 */
+    .activation-glow {
+    fill: #ffd700;
+    fill-opacity: 0.2;
+    filter: blur(5px);
+    animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+    0% { fill-opacity: 0.1; }
+    50% { fill-opacity: 0.3; }
+    100% { fill-opacity: 0.1; }
+    }
+
+    
+/* ====================================================== */
+/* 左側資訊欄 (Controls Column) 相關樣式                */
+/* ====================================================== */
+
+/* 1. 控制「整個左欄」的寬度 */
+.controls-column {
+    flex: 0 0 330px;  /* 這是在Flexbox佈局中設定欄位寬度為 400px，您可以調整這個數值 */
+}
+
+/* 2. 控制「資訊容器」的整體外觀 */
+.input-container {
+    padding: 10px;                  /* 容器的內部留白 */
+    background-color: #ffffff;      /* 容器的背景顏色 */
+    border: 1px solid #ffffff;         /* 容器的邊框 */
+    border-radius: 18px;            /* 容器的圓角 */
+    width: 100%;                    /* 讓容器寬度充滿整個 .controls-column */
+    box-sizing: border-box;         /* 確保 padding 和 border 不會增加額外寬度 */
+}
+
+/* 3. 控制「每一行輸入項」的通用排列與間距 */
+.input-row {
+    display: flex;                  /* 啟用 Flexbox，讓內部的 label 和 input 水平排列 */
+    align-items: center;            /* 讓 label 和 input 在垂直方向上置中對齊 */
+    margin-bottom: 4px;            /* 每一行之間的垂直間距 */
+}
+
+/* 4. 控制「每一行的文字標籤」(如 "西元生日：") 的寬度與對齊 */
+.input-row label {
+    width: 90px;                    /* 【可調整】這控制了所有標籤的寬度 */
+    margin-right: 10px;             /* 標籤與右邊輸入框的間距 */
+    font-size: 14px;                /* 標籤的字體大小 */
+    text-align: right;              /* 讓標籤文字靠右對齊，形成整齊的邊界 */
+    flex-shrink: 0;                 /* 防止標籤在空間不足時被壓縮 */
+}
+
+/* 5. 控制「輸入框」和「下拉選單」的通用樣式 */
+.input-row input,
+.input-row select {
+    padding: 6px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    margin-right: 5px; /* 微調右邊間距 */
+}
+
+.input-row input[type="number"] {
+    width: 150px;
+}
+
+
+/* --- ▼▼▼ 按鈕網格排版 (2x2) ▼▼▼ --- */
+#action-buttons-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 兩欄等寬 */
+    gap: 8px;                       /* 按鈕之間的間距 */
+    margin-top: 15px;
+    margin-bottom: 15px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.action-btn {
+    width: 100%;
+    padding: 5px 0;                 /* 稍微增加高度，讓點擊感更好 */
+    font-size: 14px; 
+    font-family: '微軟正黑體', sans-serif; 
+    font-weight: normal; 
+    box-sizing: border-box;
+    cursor: pointer;
+    background-color: #0092db;      /* 預設藍色 */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    text-align: center;
+    white-space: nowrap; 
+    transition: background-color 0.2s, opacity 0.2s; 
+}
+
+/* 狀態：懸停時變深色 */
+.action-btn:hover:not(:disabled) {
+    background-color: #0056b3; 
+}
+
+/* 狀態：禁用時（PDF還沒產生前）的樣子 */
+.action-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* 「更新盤面資訊」的醒目顏色（橘色系） */
+.calculate-highlight {
+    background-color: #dc6b02;
+}
+
+.calculate-highlight:hover:not(:disabled) {
+    background-color: #b34a00;
+}
+
+/* 空位佔位符，不需要樣式，僅維持網格結構 */
+.spacer {
+    pointer-events: none;
+}
+
+/* 流日選單被禁用時的樣式 */
+.transit-selects select:disabled {
+    background-color: #f5f5f5;
+    color: #a0a0a0;
+    cursor: not-allowed;
+}
+
+/* 讓下拉選單在可用時有滑鼠指標 */
+.transit-selects select:not(:disabled) {
+    cursor: pointer;
+    background-color: #fff;
+}
+
+/* ====================================================== */
+/* 結果顯示區 (Output Area) 相關樣式                     */
+/* ====================================================== */
+
+/* 1. 控制「結果區塊」的整體外觀 */
+#output-area {
+    margin-top: 15px;               /* 結果區塊與上方按鈕的距離 */
+    padding: 5px;             /* 結果區塊的內部留白 */
+    background-color: #f3f3f3;
+    border-radius: 4px;
+    font-size: 16px;                /* 結果區的基礎字體大小 */
+    font-family: 'BiauKaiWeb', sans-serif;
+    white-space: normal;
+    line-height: 1.4;               /* 結果區的基礎行距 */
+}
+
+/* --- 結果區標題樣式 --- */
+#output-title {
+    margin-top: 15px;
+    font-weight: bold;
+    font-size: 20px;
+    color: #000000;
+    border-bottom: 1px solid #ccc;
+    justify-content: center; /* 讓四柱在容器內水平置中 */
+    padding-bottom: 10px; /* 控制標題與底線的距離 */
+    margin-bottom: 20px; /* 控制標題底線與下方四柱的距離 */
+    display: flex;
+    align-items: center;
+}
+
+/* 3. 控制「四柱垂直顯示」的區塊 */
+#bazi-pillars-container {
+    display: flex;
+    justify-content: center; /* 讓四柱在容器內水平置中 */
+    text-align: center;   /* 讓干支在其空間內置中 */
+    gap: 30px;            /* 【可調整】這就是間距參數，控制每一個柱之間的固定距離 */
+    margin-right: 2px;   /* 改用右邊距來創造間隔 */
+    padding-bottom: 20px; /* 控制四柱與下方分隔線的距離 */
+}
+
+.pillar {
+    display: flex;
+    flex-direction: column; /* 控制「四柱干支」呈現垂直顯示 */
+    align-items: center;
+}
+
+/* 控制「四柱干支」標題的區塊 */
+.pillar-title {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 4px;
+}
+
+/* 控制「四柱干支」字體的區塊 */
+.pillar-char {
+    font-size: 24px;
+    font-weight: bold;
+    color: #0056b3;
+    align-items: center;
+    line-height: 1.2;
+}
+
+/* 控制「計算結果摘要」的區塊 */
+#calculation-summary {
+    font-size: 15px; /* 【可調整】您可以修改這個數字來控制主要結果的字體大小 */
+    margin-left: 10px;   /* 改用右邊距來創造間隔 */
+    padding-top: 20px;
+    margin-top: 0px;
+    border-top: 1px solid #ccc;
+    white-space: pre-wrap;
+}
+
+
+.radio-label {
+    width: auto !important; /* 覆蓋固定寬度 */
+    text-align: left !important;
+    margin-left: 2px !important;
+    margin-right: 10px !important;
+}
+
+/* --- 限制圓盤SVG的縮放範圍 --- */
+#taiyi-plate {
+    width: 100%;        /* 基礎寬度為100%，會試著填滿右邊的 .plate-column */
+    max-width: 1100px;   /* 🌟 控制 SVG 本身的最大寬度 (調大這個數字，盤面就會跟著變大) */
+    min-width: 500px;   /* 限制最小寬度不小於 500px */
+    height: auto;       /* 高度自動，以保持長寬比 */
+    display: block;     /* 避免圖片下方產生多餘的空白 */
+}
+
+/* --- 全新版面配置：左右兩欄式結構 --- */
+.main-container {
+    display: flex;           /* 啟用 Flexbox，讓內部元素(欄位)水平排列 */
+    align-items: flex-start; /* 讓兩欄從頂部開始對齊 */
+    gap: 20px;               /* 在兩欄之間增加 20px 的間距 */
+    width: 100%;
+    max-width: 1100px;       /* 🌟 控制整個網頁的最大寬度 (改大這裡) */
+    margin: 0 auto;          /* 讓主容器在頁面中水平置中 */
+}
+
+
+/* (請用此版本替換您舊的 .plate-column) */
+.plate-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* 改為從頭部開始排列，而不是置中 */
+}
+
+/* 積數顯示區塊的樣式 */
+.output-row {
+    margin-top: 10px;
+    padding-bottom: 10px;
+    display: flex;
+    align-items: center;
+    font-family: sans-serif; /* 讓標籤使用一般字體 */
+}
+.output-row label {
+    margin-right: 8px;
+    font-size: 14px;
+}
+#day-jishu-display, #hour-jishu-display {
+    font-family: monospace;
+    font-weight: bold;
+    color: #0056b3;     /* 使用與四柱相同的顏色 */
+    font-size: 14px;
+}
+
+/* --- 列印專用樣式 (v2) --- */
+@media print {
+    
+    @page {
+        size: A4 landscape;
+        margin: 15mm;
+    }
+
+    /* 預設先隱藏所有頁面元素 */
+    body > * {
+        display: none !important;
+    }
+
+    /* 然後只讓我們的主容器顯示出來 */
+    .main-container {
+        display: flex !important;
+        flex-direction: row !important;
+        visibility: visible !important;
+    }
+    
+    /* ▼▼▼ 核心修正點 ▼▼▼ */
+    /* 將輸入容器的所有子元素都隱藏... */
+    .input-container > * {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    /* ...除了我們想要保留的 #output-area */
+    .input-container > #output-area {
+        display: block !important;
+        visibility: visible !important;
+    }
+    
+    /* 確保主容器和其子欄位的樣式在列印時是正確的 */
+    .main-container {
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        border: none;
+        gap: 15px;
+    }
+    
+    .controls-column {
+        flex: 0 0 35%;
+    }
+    .plate-column {
+        flex: 1;
+    }
+    #taiyi-plate {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    /* 讓結果區的樣式更適合列印 */
+    #output-area {
+        background-color: transparent;
+        border: 1px solid #ccc;
+        margin-top: 0;
+        padding: 0 10px;
+        height: 100%;
+    }
+}
+
+/* 星曜強旺資訊區的樣式 */
+.info-box {
+    width: 100%;
+    margin-top: 5px;
+    padding: 5px 10px;
+    border: 1px solid #ffffff;
+    border-radius: 8px;
+    background-color: #ffffff;
+    font-size: 13px;
+    line-height: 1.3;
+    font-family: sans-serif;
+    box-sizing: border-box;
+}
+#star-strength-info strong {
+    color: #0056b3;
+    margin-right: 5px;
+}
+/* 星曜的詳細資訊 (強旺/化曜) 樣式 */
+.star-details {
+    color: #666; /* 使用較柔和的顏色 */
+}
+
+/* 用於標示「身宮」「日宮」「時宮」的紅色字體 */
+.sdr-palace-highlight {
+    color: #d9534f; /* 紅色 */
+    font-weight: bold;
+}
+
+/* 星曜宮位解釋的樣式 (更新) */
+.star-palace-description {
+    font-size: 12px;
+    color: #444;
+}
+
+/* 新增：宮位資訊的容器 */
+.palace-info-block {
+    margin-bottom: 12px; /* 控制每個宮位區塊之間的垂直間距 */
+}
+
+/* 新增：每個星曜條目的樣式 */
+.star-entry {
+    padding-left: 1.5em; /* 讓星曜條目有縮排效果 */
+    margin-top: 4px;   /* 星曜條目之間的微小間距 */
+}
+
+/* 女性命宮專屬描述的樣式 */
+.star-palace-description-female {
+    font-size: 12px;
+    color: #444; /* 使用不同的顏色 (範例為中紫色) 以作區分 */
+}
+
+/* 強旺建議區塊的樣式 */
+.strength-item {
+    margin-bottom: 10px;
+}
+.strength-good {
+    color: #008a00; /* 綠色 */
+    font-weight: bold;
+}
+
+/* 解厄建議區塊的樣式 */
+.remedy-item {
+    margin-bottom: 10px; /* 讓每個建議之間有點間距 */
+}
+.remedy-good {
+    color: #008a00; /* 綠色 */
+    font-weight: bold;
+}
+.remedy-bad {
+    color: #d9534f; /* 紅色 */
+    font-weight: bold;
+}
+
+
+/* 格局名稱的專屬樣式 */
+.pattern-style {
+    color: #d9534f; /* 範例為紅色，可自行修改 */
+    font-weight: bold;
+    margin: 0 5px; /* 讓格局名稱和星曜之間有點間距 */
+}
+
+/* 專門設定「人生能量趨勢圖」容器的高度 */
+#fortune-chart-container {
+    width: 100%;  /* 【可調整】您可以自由設定想要的高度，例如 350px */
+    height: 300px; 
+    max-width: 650px; /* 【可調整】新增此行，限制圖表的最大寬度 */     
+    max-height: none;
+    padding: 20px;
+    box-sizing: border-box;
+    margin-top: 5px; /* 【可調整】新增此行以縮小與上方選項的距離 (原為 15px) */
+    flex-shrink: 0;
+}
+
+/* 圖表切換器的樣式 */
+#chart-controls {
+    display: flex;
+    justify-content: flex-start; 
+    gap: 20px;
+    align-items: center; 
+}
+
+#chart-controls label {
+    cursor: pointer;
+    display: flex;
+    align-items: center; 
+}
+
+
+/* ====================================================== */
+/* 響應式設計：手機版專用樣式 (寬度 <= 850px)       */
+/* ====================================================== */
+@media (max-width: 850px) {
+
+    /* 將主容器改為垂直堆疊 */
+    .main-container {
+        flex-direction: column;
+        gap: 10px; /* 縮小欄位間距 */
+    }
+
+    /* 讓左右兩欄都變成100%寬度 */
+    .controls-column,
+    .plate-column {
+        flex: 1 1 100%; /* 讓欄位能自動填滿寬度 */
+        max-width: 100%;
+    }
+
+    /* 調整SVG命盤的大小，讓它能符合手機螢幕 */
+    #taiyi-plate {
+        width: 100%;      /* 讓圓盤寬度佔滿其容器的 98% */
+        min-width: unset;  /* 移除桌面版的最小寬度限制，讓它可以自由縮放 */
+        max-width: unset;  /* 同時也移除桌面版的最大寬度限制 */
+        margin: 0 auto;  /* 讓它在容器內水平置中 */
+    }
+
+    /* 適當縮小四柱的間距和字體，以容納更多資訊 */
+    #bazi-pillars-container {
+        gap: 15px; /* 縮小柱子之間的距離 */
+    }
+    .pillar-char {
+        font-size: 20px; /* 稍微縮小字體 */
+    }
+
+    /* 讓圖表控制按鈕可以換行，避免擠在一起 */
+    #chart-controls {
+        flex-wrap: wrap; /* 允許換行 */
+        gap: 10px; /* 調整按鈕間距 */
+    }
+}
+
+/* ====================================================== */
+/* AI 輸出內容專屬排版樣式 (v4 - 優化版)                 */
+/* ====================================================== */
+
+/* --- 1. AI 輸出區塊的「容器」統一樣式 --- */
+#ai-summary-output,
+#n8n-ai-output {
+    font-family: 'BiauKaiWeb', sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    padding-bottom: 20px;
+}
+
+/* --- 2. 內容排版：標題 (h3) --- */
+#ai-summary-output h3,
+#n8n-ai-output h3 {
+    font-size: 18px;
+    color: #0056b3;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 6px;
+    margin-top: 24px;
+    margin-bottom: 16px;
+}
+
+#ai-summary-output h3:first-of-type,
+#n8n-ai-output h3:first-of-type {
+    margin-top: 0;
+}
+
+/* --- 3. 內容排版：段落 (p) --- */
+#ai-summary-output p,
+#n8n-ai-output p > strong:first-child {
+    display: block;
+    width: 100%;
+    margin-bottom: 1em;
+    line-height: 1.8;
+    text-align: justify; /* 左右對齊會讓排版像書本一樣整齊 */
+    white-space: normal; /* 忽略 AI 內容中多餘的單行換行 */
+    display: inline; /* <-- 改成這樣 */
+}
+
+/* --- 4. 內容排版：列表 (ul, ol, li) --- */
+#ai-summary-output ul,
+#n8n-ai-output ul,
+
+#ai-summary-output ol, 
+#n8n-ai-output ol {
+    padding-left: 20px;
+    list-style-position: outside; /* 讓數字在外面，文字對齊更整齊 */
+}
+
+/* 確保清單項目是分段條列的 */
+#ai-summary-output ol li,
+#n8n-ai-output ol li {
+    display: list-item;    /* 確保它是列表格式 */
+    margin-bottom: 12px;   /* 項目之間的距離 */
+    padding-left: 5px;
+    line-height: 1.7;
+}
+
+#ai-summary-output li, 
+#n8n-ai-output li {
+    margin-bottom: 15px; /* 項目之間的間距 */
+    line-height: 1.8;
+    text-align: justify;
+}
+
+/* 內部的重點文字依然保持 inline，防止垂直排列 */
+#ai-summary-output li strong,
+#n8n-ai-output li strong {
+    display: inline !important;
+    color: #c93e00;
+}
+
+/* --- 5. 內容排版：特殊元件 (strong) 修正 --- */
+#ai-summary-output strong,
+#n8n-ai-output strong {
+    color: #c93e00;
+    display: inline !important; 
+    width: auto !important;
+    margin-right: 0 !important;
+    text-align: left !important;
+    font-weight: bold;
+}
+
+
+#ai-summary-output h6,
+#n8n-ai-output h6 {
+    text-align: center;
+    font-size: 14px;
+    color: #888;
+    font-weight: normal;
+    border: none;
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+
+
+/* --- 6. PDF 報告頁首的專屬樣式 --- */
+.report-header {
+    margin-bottom: 25px;
+    font-family: 'BiauKaiWeb', sans-serif;
+}
+.report-header h2 {
+    text-align: center;
+    font-size: 22px;
+    margin-bottom: 20px;
+    color: #333;
+}
+.report-header p {
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 5px 0;
+}
+
+.report-header .info-label {
+    display: inline-block;
+    width: 75px;
+    text-align: right;
+    margin-right: 8px;
+}
+.report-header hr {
+    border: 0;
+    border-top: 1px solid #ccc;
+    margin: 15px 0;
+}
+
+/* ====================================================== */
+/* 空亡宮位特殊顯示樣式                                   */
+/* ====================================================== */
+
+/* 新增：空亡宮位的背景底色 */
+.kong-wang-bg {
+    fill: #fad957;       /* 淺灰色，代表空亡 */
+    fill-opacity: 0.15;   /* 60% 透明度，才不會遮住底圖的線條 */
+    stroke: none;        /* 不要邊框 */
+    pointer-events: none;/* 讓滑鼠點擊可以穿透它 */
+    transition: opacity 1s ease-in-out; /* 一樣加上淡入動畫 */
+}
+
+/* ▼▼▼ 流年感應扇形背景與互動樣式 ▼▼▼ */
+.activation-sector {
+    fill: #90ee90;       /* 預設淡綠色 */
+    fill-opacity: 0.3;    /* 半透明，避免遮擋底圖 */
+    stroke: none;         /* 不要邊框 */
+    pointer-events: all;  /* 確保滑鼠可以觸發事件 */
+    transition: fill-opacity 0.3s ease, fill 0.3s ease; /* 平滑過渡效果 */
+    cursor: pointer;      /* 滑鼠移上去變成手指圖示，提示可互動 */
+}
+
+/* ▼▼▼ 本命日柱化曜扇形背景 (吉星/凶星區分) ▼▼▼ */
+/* 吉星：淡天藍色 */
+.day-activation-sector-good {
+    fill: #73eba9;
+    fill-opacity: 0.3;
+    stroke: none;
+    pointer-events: all;
+    transition: fill-opacity 0.3s ease, fill 0.3s ease;
+    cursor: pointer;
+}
+.day-activation-sector-good:hover {
+    fill-opacity: 0.6;
+    fill: #fae671;       /* 變成金色，讓反饋更強烈 */
+}
+
+/* 凶星 (忌星/鬼星)：淡粉紅色 */
+.day-activation-sector-bad {
+    fill: #f9b89f;
+    fill-opacity: 0.3;
+    stroke: none;
+    pointer-events: all;
+    transition: fill-opacity 0.3s ease, fill 0.3s ease;
+    cursor: pointer;
+}
+.day-activation-sector-bad:hover {
+    fill-opacity: 0.6;
+    fill: #fae671;       /* 變成金色，讓反饋更強烈 */
+}
+
+/* 當滑鼠懸停在扇形上時的變化 */
+.activation-sector:hover {
+    fill-opacity: 0.6;    /* 變不透明一點 */
+    fill: #fae671;       /* 變成金色，讓反饋更強烈 */
+}
+
+/* ▼▼▼ 流日推演扇形背景 (中圈：吉凶雙色) ▼▼▼ */
+/* 吉星：藍綠色 */
+.transit-activation-sector-good {
+    fill: #20b2aa;       /* 漂亮的藍綠色 (LightSeaGreen) */
+    fill-opacity: 0.3;
+    stroke: none;        /* 拿掉虛線框 */
+    pointer-events: all;
+    transition: fill-opacity 0.3s ease, fill 0.3s ease;
+    cursor: pointer;
+}
+.transit-activation-sector-good:hover {
+    fill-opacity: 0.6;
+    fill: #fae671;       /* 變成金色，讓反饋更強烈 */
+}
+
+/* 凶星 (忌星/鬼星)：桃紅色 */
+.transit-activation-sector-bad {
+    fill: #f97070;       /* 亮眼的桃紅色 (HotPink) */
+    fill-opacity: 0.3;
+    stroke: none;        /* 拿掉虛線框 */
+    pointer-events: all;
+    transition: fill-opacity 0.3s ease, fill 0.3s ease;
+    cursor: pointer;
+}
+.transit-activation-sector-bad:hover {
+    fill-opacity: 0.6;
+    fill: #fae671;       /* 變成金色，讓反饋更強烈 */
+}
+
+/* ▼▼▼ 浮動提示框 (Tooltip) 的樣式 ▼▼▼ */
+#taiyi-tooltip {
+    position: absolute;
+    display: none;        /* 預設隱藏 */
+    padding: 12px 15px;
+    background-color: rgba(255, 255, 255, 0.95); /* 帶有微透明的白底 */
+    border: 1px solid #8f857c; /* 使用你按鈕的橘色系作為邊框 */
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    z-index: 1000;        /* 確保顯示在最上層 */
+    pointer-events: none; /* 讓滑鼠事件穿透提示框，避免閃爍 */
+    font-family: 'BiauKaiWeb', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+    white-space: pre-wrap; /* 讓 \n 能正常換行 */
+    max-width: 280px;
+}
+/* ====================================================== */
+/* V1 Redesign: 東方命理 × 水墨留白 × 現代 Landing Page       */
+/* ====================================================== */
+:root {
+  --bg: #f7f1e6;
+  --bg-deep: #efe4d0;
+  --paper: #fffaf0;
+  --paper-strong: #fffdf6;
+  --ink: #26352b;
+  --ink-soft: #3f5043;
+  --muted: #6f7568;
+  --green: #51684f;
+  --green-dark: #354838;
+  --green-light: #73856f;
+  --gold: #b99a5d;
+  --gold-soft: #e8dcc1;
+  --line: #ded1b7;
+  --shadow: 0 22px 55px rgba(65, 50, 28, 0.12);
+  --shadow-soft: 0 12px 30px rgba(65, 50, 28, 0.08);
+  --radius-lg: 28px;
+  --radius-md: 20px;
+  --radius-sm: 14px;
+  --font-body: 'BiauKaiWeb', 'Noto Serif TC', 'Songti TC', 'PMingLiU', serif;
+  --font-ui: 'Noto Sans TC', 'Microsoft JhengHei', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  display: block !important;
+  margin: 0;
+  padding: 0 !important;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 18% 18%, rgba(185, 154, 93, 0.12), transparent 30%),
+    radial-gradient(circle at 88% 6%, rgba(81, 104, 79, 0.10), transparent 28%),
+    linear-gradient(180deg, #fbf7ed 0%, var(--bg) 45%, #f5ead8 100%);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -2;
+  opacity: 0.48;
+  background-image:
+    linear-gradient(rgba(153, 130, 88, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(153, 130, 88, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 10% 82%, rgba(38, 53, 43, 0.11), transparent 24%),
+    radial-gradient(circle at 82% 72%, rgba(185, 154, 93, 0.09), transparent 26%);
+  background-size: 36px 36px, 36px 36px, 100% 100%, 100% 100%;
+}
+
+body::after {
+  content: "太乙";
+  position: fixed;
+  right: -80px;
+  top: 34%;
+  font-size: 150px;
+  letter-spacing: 0.18em;
+  color: rgba(185, 154, 93, 0.055);
+  writing-mode: vertical-rl;
+  z-index: -1;
+  pointer-events: none;
+}
+
+a { color: inherit; text-decoration: none; }
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(1180px, calc(100% - 36px));
+  margin: 14px auto 0;
+  padding: 12px 14px 12px 16px;
+  border: 1px solid rgba(222, 209, 183, 0.75);
+  border-radius: 999px;
+  background: rgba(255, 250, 240, 0.82);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 12px 30px rgba(83, 64, 33, 0.08);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  color: var(--gold);
+  background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(232,220,193,0.45));
+  font-size: 18px;
+}
+
+.brand-text { font-size: 18px; letter-spacing: 0.06em; }
+
+.site-nav {
+  display: flex;
+  gap: clamp(14px, 2.5vw, 34px);
+  align-items: center;
+  color: #4d574c;
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+
+.site-nav a {
+  position: relative;
+  padding: 8px 0;
+}
+
+.site-nav a::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0;
+  height: 1px;
+  background: var(--gold);
+  transform: translateX(-50%);
+  transition: width 0.25s ease;
+}
+
+.site-nav a:hover::after { width: 100%; }
+
+.nav-cta,
+.primary-cta,
+.ghost-cta,
+#ai-summary-controls button,
+#get-monthly-ai-btn,
+#test-n8n-ai-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+}
+
+.nav-cta,
+.primary-cta {
+  color: #fffaf0;
+  background: linear-gradient(135deg, var(--green), var(--green-dark));
+  border: 1px solid rgba(53, 72, 56, 0.12);
+  box-shadow: 0 12px 28px rgba(53, 72, 56, 0.18);
+}
+
+.nav-cta { padding: 12px 22px; font-size: 14px; }
+.primary-cta { padding: 15px 24px; font-size: 15px; }
+
+.ghost-cta {
+  padding: 15px 22px;
+  color: var(--green-dark);
+  background: rgba(255, 250, 240, 0.58);
+  border: 1px solid rgba(185, 154, 93, 0.45);
+}
+
+.nav-cta:hover,
+.primary-cta:hover,
+.ghost-cta:hover,
+.action-btn:hover:not(:disabled),
+#ai-summary-controls button:hover { transform: translateY(-2px); }
+
+.landing-page {
+  width: min(1180px, calc(100% - 36px));
+  margin: 0 auto;
+}
+
+.hero-section {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(420px, 1.05fr);
+  gap: clamp(28px, 5vw, 72px);
+  align-items: center;
+  min-height: 620px;
+  padding: 72px 10px 58px;
+}
+
+.hero-section::before {
+  content: "";
+  position: absolute;
+  left: -8vw;
+  bottom: 24px;
+  width: 58vw;
+  height: 220px;
+  opacity: 0.26;
+  background:
+    radial-gradient(ellipse at 20% 70%, rgba(38,53,43,0.30), transparent 40%),
+    radial-gradient(ellipse at 46% 68%, rgba(38,53,43,0.22), transparent 36%),
+    radial-gradient(ellipse at 72% 74%, rgba(38,53,43,0.14), transparent 30%);
+  filter: blur(1px);
+  pointer-events: none;
+}
+
+.ink-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.ink-orb-left {
+  left: 28%;
+  bottom: 110px;
+  width: 96px;
+  height: 96px;
+  background: radial-gradient(circle, rgba(220, 191, 134, 0.38), rgba(220, 191, 134, 0.02) 68%);
+}
+.ink-orb-right {
+  right: 4%;
+  top: 88px;
+  width: 180px;
+  height: 180px;
+  border: 1px solid rgba(185, 154, 93, 0.20);
+  opacity: 0.45;
+}
+
+.hero-copy { position: relative; z-index: 1; }
+.eyebrow {
+  margin: 0 0 18px;
+  color: var(--gold);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.23em;
+  text-transform: uppercase;
+}
+
+.hero-copy h1 {
+  margin: 0;
+  color: var(--green-dark);
+  font-size: clamp(42px, 5.8vw, 76px);
+  line-height: 1.22;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.hero-desc {
+  max-width: 560px;
+  margin: 24px 0 0;
+  color: #566254;
+  font-family: var(--font-ui);
+  font-size: 18px;
+  line-height: 2;
+  letter-spacing: 0.04em;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 34px;
+}
+
+.hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+.hero-badges span {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid rgba(222, 209, 183, 0.8);
+  border-radius: 999px;
+  color: #647062;
+  background: rgba(255, 250, 240, 0.52);
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+
+.hero-visual { position: relative; z-index: 1; }
+.device-frame {
+  border: 1px solid rgba(64, 57, 40, 0.18);
+  border-radius: 26px;
+  padding: 16px 16px 22px;
+  background: linear-gradient(180deg, rgba(37,39,38,0.96), rgba(18,20,20,0.98));
+  box-shadow: 0 32px 70px rgba(38, 38, 35, 0.24);
+}
+.device-topbar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 24px;
+  padding-left: 6px;
+}
+.device-topbar span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.22);
+}
+.preview-card {
+  display: grid;
+  grid-template-columns: 0.72fr 1fr;
+  gap: 18px;
+  min-height: 290px;
+  padding: 28px;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 78% 30%, rgba(185,154,93,0.10), transparent 28%),
+    linear-gradient(135deg, #fffaf0 0%, #f6eddd 100%);
+  overflow: hidden;
+}
+.preview-info p {
+  margin: 0 0 18px;
+  color: var(--ink);
+  font-weight: 700;
+}
+.preview-pillars {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 0 0 18px;
+}
+.preview-pillars span {
+  display: grid;
+  place-items: center;
+  min-height: 62px;
+  border: 1px solid rgba(185, 154, 93, 0.28);
+  border-radius: 12px;
+  color: #276193;
+  background: rgba(255,255,255,0.55);
+  font-size: 22px;
+  line-height: 1.2;
+}
+.preview-info ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: #667063;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 2;
+}
+.mini-plate {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  aspect-ratio: 1;
+  min-width: 230px;
+  border-radius: 50%;
+  background:
+    conic-gradient(from 0deg, rgba(81,104,79,0.08), rgba(185,154,93,0.20), rgba(99,123,105,0.12), rgba(185,154,93,0.10), rgba(81,104,79,0.08));
+  border: 1px solid rgba(38,53,43,0.22);
+}
+.mini-plate::before,
+.mini-plate::after {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border-radius: 50%;
+  border: 1px dashed rgba(38,53,43,0.24);
+}
+.mini-plate::after { inset: 28%; border-style: solid; opacity: 0.55; }
+.ring { position: absolute; border-radius: 50%; border: 1px solid rgba(38,53,43,0.16); }
+.ring-1 { inset: 5%; }
+.ring-2 { inset: 18%; }
+.ring-3 { inset: 40%; }
+.plate-center {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(255,250,240,0.86);
+  color: var(--gold);
+  font-weight: 800;
+}
+.preview-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+  color: rgba(255,250,240,0.82);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  text-align: center;
+}
+.preview-tabs span {
+  padding: 10px 8px;
+  border: 1px solid rgba(255,250,240,0.12);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+}
+
+.features-section,
+.story-section,
+.tool-section,
+.final-cta-section {
+  position: relative;
+  padding: 42px 0;
+}
+
+.section-heading {
+  display: grid;
+  grid-template-columns: minmax(40px, 1fr) auto minmax(40px, 1fr);
+  gap: 18px;
+  align-items: center;
+  margin: 0 auto 26px;
+  color: var(--green-dark);
+  text-align: center;
+}
+.section-heading h2 {
+  margin: 0;
+  font-size: clamp(26px, 3vw, 36px);
+  letter-spacing: 0.14em;
+  font-weight: 700;
+}
+.section-heading span {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+.feature-card,
+.story-panel,
+.tool-workspace,
+.final-cta-section {
+  border: 1px solid rgba(222, 209, 183, 0.82);
+  background: rgba(255, 250, 240, 0.72);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(10px);
+}
+.feature-card {
+  min-height: 220px;
+  padding: 28px 24px;
+  border-radius: var(--radius-md);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow);
+  border-color: rgba(185, 154, 93, 0.72);
+}
+.feature-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 18px;
+  border: 1px solid rgba(81,104,79,0.25);
+  border-radius: 50%;
+  color: var(--green);
+  background: rgba(255,255,255,0.5);
+  font-size: 24px;
+}
+.feature-card h3 {
+  margin: 0 0 12px;
+  color: var(--ink);
+  font-size: 19px;
+  letter-spacing: 0.06em;
+}
+.feature-card p {
+  margin: 0;
+  color: #697266;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.story-panel {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 36px;
+  align-items: center;
+  padding: clamp(28px, 4vw, 52px);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.story-preview {
+  position: relative;
+  min-height: 300px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 72% 44%, rgba(185,154,93,0.10), transparent 26%),
+    linear-gradient(135deg, rgba(255,255,255,0.72), rgba(247,241,230,0.62));
+  border: 1px solid rgba(222,209,183,0.78);
+  padding: 30px;
+}
+.story-preview::after {
+  content: "";
+  position: absolute;
+  right: -46px;
+  top: 50%;
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  border: 28px solid rgba(81,104,79,0.07);
+  transform: translateY(-50%);
+}
+.story-line {
+  width: 72%;
+  height: 12px;
+  margin: 18px 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(81,104,79,0.22), rgba(185,154,93,0.12));
+}
+.story-line.short { width: 48%; }
+.story-mock {
+  position: relative;
+  z-index: 2;
+  max-width: 320px;
+  margin-top: 42px;
+  padding: 24px;
+  border-radius: 20px;
+  background: rgba(255,250,240,0.82);
+  border: 1px solid rgba(185,154,93,0.30);
+  box-shadow: var(--shadow-soft);
+}
+.story-mock strong { color: var(--green-dark); font-size: 22px; }
+.story-mock p { color: var(--muted); font-family: var(--font-ui); line-height: 1.8; }
+.story-copy h2,
+.final-cta-section h2 {
+  margin: 0 0 18px;
+  color: var(--green-dark);
+  font-size: clamp(28px, 3.4vw, 44px);
+  line-height: 1.45;
+  letter-spacing: 0.08em;
+}
+.story-copy p,
+.final-cta-section p,
+.tool-intro {
+  color: #626c60;
+  font-family: var(--font-ui);
+  line-height: 2;
+  letter-spacing: 0.03em;
+}
+.check-list {
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+  color: #526055;
+  font-family: var(--font-ui);
+  line-height: 2;
+}
+.check-list li {
+  position: relative;
+  padding-left: 30px;
+  margin: 7px 0;
+}
+.check-list li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 2px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #fffaf0;
+  background: var(--green);
+  font-size: 12px;
+}
+.tool-intro {
+  max-width: 760px;
+  margin: -12px auto 26px;
+  text-align: center;
+}
+
+/* Tool Workspace Overrides */
+.tool-workspace.main-container {
+  display: grid !important;
+  grid-template-columns: minmax(250px, 0.62fr) minmax(680px, 1.38fr) !important;
+  align-items: start !important;
+  gap: 6px !important;
+  width: 100% !important;
+  max-width: 1380px !important;
+  margin: 0 auto !important;
+  padding: 20px !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+.controls-column {
+  flex: initial !important;
+  width: 100% !important;
+}
+.input-container,
+.info-box,
+#output-area,
+#fortune-chart-container,
+#chart-controls,
+#ai-summary-controls,
+#ai-summary-output,
+#n8n-ai-output {
+  border: 1px solid rgba(222, 209, 183, 0.80) !important;
+  background: rgba(255, 253, 246, 0.78) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 8px 22px rgba(65,50,28,0.06) !important;
+}
+
+.input-container {
+  position: sticky;
+  top: 92px;
+  padding: 16px !important;
+}
+.input-container::before {
+  content: "基本資料與分析設定";
+  display: block;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(222,209,183,0.85);
+  color: var(--green-dark);
+  font-size: 19px;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+.input-row {
+  align-items: center !important;
+  gap: 6px !important;
+  margin-bottom: 10px !important;
+  font-family: var(--font-ui) !important;
+}
+.input-row label {
+  width: 76px !important;
+  color: #526055 !important;
+  font-size: 14px !important;
+  text-align: right !important;
+}
+.input-row input[type="text"],
+.input-row input[type="number"],
+.input-row select,
+.input-row input:not([type="radio"]):not([type="checkbox"]) {
+  min-height: 34px !important;
+  padding: 6px 8px !important;
+  border: 1px solid rgba(185, 154, 93, 0.38) !important;
+  border-radius: 10px !important;
+  background: rgba(255, 250, 240, 0.92) !important;
+  color: var(--ink) !important;
+  font-family: var(--font-ui) !important;
+  font-size: 13px !important;
+  outline: none !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+.input-row input:focus,
+.input-row select:focus {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px rgba(185,154,93,0.14) !important;
+}
+.controls-group {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(222,209,183,0.72);
+}
+.action-btn {
+  min-height: 42px !important;
+  padding: 10px 13px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 250, 240, 0.7) !important;
+  border: 1px solid rgba(185,154,93,0.42) !important;
+  color: var(--green-dark) !important;
+  font-family: var(--font-ui) !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  box-shadow: none !important;
+}
+.action-btn.calculate-highlight,
+#calculate-btn {
+  background: linear-gradient(135deg, var(--green), var(--green-dark)) !important;
+  color: #fffaf0 !important;
+  border-color: rgba(53, 72, 56, 0.20) !important;
+  box-shadow: 0 10px 24px rgba(53,72,56,0.16) !important;
+}
+.action-btn:disabled {
+  background: rgba(218, 211, 196, 0.55) !important;
+  color: rgba(83,89,78,0.6) !important;
+  cursor: not-allowed !important;
+}
+#output-area {
+  margin-top: 18px !important;
+  padding: 16px !important;
+  color: var(--ink) !important;
+  font-family: var(--font-body) !important;
+}
+#output-title {
+  color: var(--green-dark) !important;
+  border-bottom: 1px solid rgba(222,209,183,0.9) !important;
+  font-size: 20px !important;
+}
+.pillar-char,
+#day-jishu-display,
+#hour-jishu-display {
+  color: #276193 !important;
+}
+#calculation-summary {
+  border-top: 1px solid rgba(222,209,183,0.9) !important;
+  color: #4d5a50 !important;
+  line-height: 1.8 !important;
+}
+
+.tool-workspace > .plate-column {
+  min-width: 0;
+  padding: 12px !important;
+  border: 1px solid rgba(222,209,183,0.82);
+  border-radius: 24px;
+  background: rgba(255,250,240,0.58);
+  box-shadow: var(--shadow-soft);
+}
+#taiyi-plate {
+  width: 100% !important;
+  max-width: 920px !important;
+  min-width: 0 !important;
+  margin: 0 auto 12px !important;
+  border-radius: 50%;
+  filter: drop-shadow(0 14px 20px rgba(65,50,28,0.10));
+}
+.info-box {
+  margin-top: 12px !important;
+  padding: 14px 16px !important;
+  color: #3f4a42 !important;
+  font-family: var(--font-ui) !important;
+  font-size: 14px !important;
+  line-height: 1.65 !important;
+}
+#chart-controls {
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+}
+#chart-controls label {
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(255,250,240,0.7);
+  border: 1px solid rgba(222,209,183,0.6);
+  color: var(--green-dark);
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+#fortune-chart-container {
+  height: 320px !important;
+  max-width: 100% !important;
+}
+#ai-summary-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+#ai-summary-controls button,
+#get-monthly-ai-btn,
+#test-n8n-ai-btn {
+  min-height: 42px;
+  padding: 12px 18px !important;
+  border: 1px solid rgba(53,72,56,0.18) !important;
+  background: linear-gradient(135deg, var(--green), var(--green-dark)) !important;
+  color: #fffaf0 !important;
+  box-shadow: 0 10px 24px rgba(53,72,56,0.14) !important;
+}
+#test-n8n-ai-btn { background: linear-gradient(135deg, #607b5d, #3f5a43) !important; }
+#ai-summary-output h3,
+#n8n-ai-output h3 {
+  color: var(--green-dark) !important;
+  border-bottom-color: rgba(222,209,183,0.9) !important;
+}
+
+.final-cta-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 42px 0 34px;
+  padding: 36px clamp(24px, 4vw, 50px);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.final-cta-section::after {
+  content: "";
+  width: 160px;
+  height: 160px;
+  position: absolute;
+  right: -52px;
+  bottom: -62px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(185,154,93,0.18), transparent 65%);
+}
+.final-cta-section h2 { font-size: clamp(26px, 3vw, 38px); }
+.final-cta-section p { margin: 0; }
+
+.site-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: min(1180px, calc(100% - 36px));
+  margin: 0 auto 26px;
+  padding: 18px 4px 8px;
+  color: #7a7b70;
+  border-top: 1px solid rgba(185,154,93,0.28);
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+.site-footer nav { display: flex; gap: 18px; }
+.site-footer a:hover { color: var(--green-dark); }
+
+#taiyi-tooltip {
+  border-radius: 12px !important;
+  border: 1px solid rgba(185,154,93,0.35) !important;
+  background: rgba(255,250,240,0.94) !important;
+  box-shadow: var(--shadow-soft) !important;
+  color: var(--ink) !important;
+  font-family: var(--font-ui) !important;
+}
+
+@media (max-width: 1080px) {
+  .site-nav { display: none; }
+  .hero-section { grid-template-columns: 1fr; min-height: auto; padding-top: 56px; }
+  .hero-visual { max-width: 720px; width: 100%; margin: 0 auto; }
+  .feature-grid { grid-template-columns: repeat(2, 1fr); }
+  .story-panel { grid-template-columns: 1fr; }
+  .tool-workspace.main-container { grid-template-columns: 1fr !important; }
+  .input-container { position: static; }
+}
+
+@media (max-width: 720px) {
+  .site-header { width: min(100% - 20px, 1180px); margin-top: 10px; border-radius: 22px; }
+  .brand-text { font-size: 15px; }
+  .brand-mark { width: 32px; height: 32px; }
+  .nav-cta { display: none; }
+  .landing-page { width: min(100% - 20px, 1180px); }
+  .hero-section { padding: 42px 0 32px; }
+  .hero-copy h1 { font-size: 40px; }
+  .hero-desc { font-size: 15px; line-height: 1.9; }
+  .primary-cta,
+  .ghost-cta { width: 100%; padding: 14px 18px; }
+  .preview-card { grid-template-columns: 1fr; padding: 20px; }
+  .mini-plate { min-width: 220px; width: 78%; margin: 0 auto; }
+  .preview-tabs { grid-template-columns: repeat(2, 1fr); }
+  .feature-grid { grid-template-columns: 1fr; }
+  .feature-card { min-height: auto; }
+  .story-panel { padding: 20px; }
+  .story-preview { min-height: 250px; padding: 18px; }
+  .tool-workspace.main-container { padding: 12px !important; border-radius: 22px !important; }
+  .input-container { padding: 16px !important; }
+  .input-row { flex-wrap: wrap; align-items: flex-start !important; }
+  .input-row label { width: 100% !important; text-align: left !important; margin-right: 0 !important; }
+  .input-row input[type="text"],
+  .input-row input[type="number"],
+  .input-row select { flex: 1 1 auto; }
+  #action-buttons-row1,
+  #action-buttons-row2 { flex-direction: column; }
+  .tool-workspace > .plate-column { padding: 12px !important; }
+  #fortune-chart-container { height: 280px !important; padding: 12px !important; }
+  .final-cta-section { flex-direction: column; align-items: flex-start; }
+  .site-footer { flex-direction: column; align-items: flex-start; width: min(100% - 20px, 1180px); }
+  .site-footer nav { flex-wrap: wrap; }
+}
+
+@media print {
+  body { background: #fff !important; }
+  .site-header,
+  .hero-section,
+  .features-section,
+  .story-section,
+  .final-cta-section,
+  .site-footer,
+  .tool-intro,
+  .section-heading { display: none !important; }
+  .landing-page,
+  .tool-section { display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+  .tool-workspace.main-container { display: flex !important; box-shadow: none !important; border: none !important; background: transparent !important; }
+}
+
+
+/* ====================================================== */
+/* V1.1 工具頁獨立版：移除首頁段落後的工具頁調整          */
+/* ====================================================== */
+
+.tool-only-page {
+  display: block !important;
+}
+
+.tool-page {
+  width: min(1180px, calc(100% - 36px));
+  margin: 0 auto;
+  padding: 42px 0 18px;
+}
+
+.tool-section-standalone {
+  padding-top: 0 !important;
+}
+
+.tool-title-heading {
+  margin-top: 10px;
+  margin-bottom: 16px;
+}
+
+.section-heading h1 {
+  margin: 0;
+  color: var(--green-dark);
+  font-size: clamp(40px, 5vw, 68px);
+  line-height: 1.16;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+}
+
+.tool-section-standalone .tool-intro {
+  max-width: 760px;
+  margin: 0 auto 28px;
+  font-size: 17px;
+}
+
+.tool-footer {
+  margin-top: 18px !important;
+}
+
+@media (max-width: 720px) {
+  .tool-page {
+    width: min(100% - 20px, 1180px);
+    padding-top: 28px;
+  }
+
+  .section-heading h1 {
+    font-size: 42px;
+    letter-spacing: 0.12em;
+  }
+
+  .tool-section-standalone .tool-intro {
+    font-size: 15px;
+    line-height: 1.9;
+  }
+}
+
+/* V1.2：性別欄位微調，讓 radio 圈圈與男女文字更緊密 */
+.gender-row {
+  gap: 8px !important;
+}
+
+.gender-row > label {
+  margin-right: 0 !important;
+}
+
+.gender-options {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.gender-option {
+  width: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: var(--ink) !important;
+  font-size: 14px !important;
+  line-height: 1 !important;
+  text-align: left !important;
+  cursor: pointer;
+}
+
+.gender-option input[type="radio"] {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 15px !important;
+  height: 15px !important;
+  accent-color: var(--green-dark);
+}
+
+.gender-option span {
+  display: inline-block;
+  transform: translateY(0.5px);
+}
+
+
+/* ====================================================== */
+/* V1.3 Layout Tuning: larger plate, narrower input panel  */
+/* ====================================================== */
+.tool-workspace.main-container {
+  grid-template-columns: minmax(250px, 0.62fr) minmax(680px, 1.38fr) !important;
+  max-width: 1380px !important;
+  gap: 18px !important;
+}
+.tool-workspace > .controls-column {
+  max-width: 330px !important;
+}
+.tool-workspace > .plate-column {
+  padding: 12px !important;
+}
+#taiyi-plate {
+  max-width: 920px !important;
+  width: min(100%, 940px) !important;
+}
+.input-container {
+  padding: 16px !important;
+}
+.input-container::before {
+  font-size: 19px !important;
+}
+.input-row label {
+  width: 76px !important;
+}
+.input-row {
+  gap: 6px !important;
+  margin-bottom: 10px !important;
+}
+.input-row input[type="text"],
+.input-row input[type="number"],
+.input-row select,
+.input-row input:not([type="radio"]):not([type="checkbox"]) {
+  min-height: 34px !important;
+  padding: 6px 8px !important;
+}
+
+@media (max-width: 1100px) {
+  .tool-workspace.main-container {
+    grid-template-columns: 1fr !important;
+    max-width: 960px !important;
+  }
+  .tool-workspace > .controls-column {
+    max-width: none !important;
+  }
+  #taiyi-plate {
+    max-width: 820px !important;
+  }
+}
+
+/* ====================================================== */
+/* V1.4 Layout Tuning: balanced between V1.2 and V1.3      */
+/* 左側欄位比 V1.3 稍寬，右側命盤仍比 V1.2 大             */
+/* ====================================================== */
+.tool-workspace.main-container {
+  grid-template-columns: minmax(290px, 0.76fr) minmax(600px, 1.24fr) !important;
+  max-width: 1280px !important;
+  gap: 20px !important;
+}
+.tool-workspace > .controls-column {
+  max-width: 380px !important;
+}
+.tool-workspace > .plate-column {
+  padding: 15px !important;
+}
+#taiyi-plate {
+  max-width: 860px !important;
+  width: min(100%, 860px) !important;
+}
+.input-container {
+  padding: 18px !important;
+}
+.input-container::before {
+  font-size: 20px !important;
+  letter-spacing: 0.07em !important;
+}
+.input-row {
+  gap: 7px !important;
+  margin-bottom: 11px !important;
+}
+.input-row label {
+  width: 84px !important;
+}
+.input-row input[type="text"],
+.input-row input[type="number"],
+.input-row select,
+.input-row input:not([type="radio"]):not([type="checkbox"]) {
+  min-height: 35px !important;
+  padding: 7px 9px !important;
+}
+
+@media (max-width: 1100px) {
+  .tool-workspace.main-container {
+    grid-template-columns: 1fr !important;
+    max-width: 960px !important;
+  }
+  .tool-workspace > .controls-column {
+    max-width: none !important;
+  }
+  #taiyi-plate {
+    max-width: 820px !important;
+  }
+}
+
+
+/* ====================================================== */
+/* V1.5：西元生日欄位美化與防止超出框線                   */
+/* ====================================================== */
+.birth-date-row {
+  align-items: flex-start !important;
+}
+
+.birth-date-row > label {
+  padding-top: 8px !important;
+  flex: 0 0 84px !important;
+}
+
+.date-select-group {
+  display: grid !important;
+  grid-template-columns: minmax(78px, 1.2fr) minmax(62px, 0.9fr) minmax(62px, 0.9fr) !important;
+  gap: 8px !important;
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.date-select-unit {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  min-width: 0 !important;
+  color: var(--muted, #6f7568) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+}
+
+.date-select-unit select {
+  width: 100% !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+.date-select-unit span {
+  flex: 0 0 auto !important;
+  line-height: 1 !important;
+}
+
+@media (max-width: 1080px) {
+  .date-select-group {
+    grid-template-columns: minmax(88px, 1.25fr) minmax(66px, 1fr) minmax(66px, 1fr) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .birth-date-row > label {
+    flex-basis: 100% !important;
+    width: 100% !important;
+    padding-top: 0 !important;
+  }
+
+  .date-select-group {
+    width: 100% !important;
+    grid-template-columns: minmax(105px, 1.25fr) minmax(76px, 1fr) minmax(76px, 1fr) !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .date-select-group {
+    grid-template-columns: 1fr !important;
+  }
+
+  .date-select-unit select {
+    max-width: none !important;
+  }
+}
+
+/* ====================================================== */
+/* V1.6：縮小左右欄間距，將空間留給右側太乙圓盤           */
+/* ====================================================== */
+.tool-workspace.main-container {
+  gap: 12px !important;
+}
+
+.tool-workspace > .plate-column {
+  padding: 12px !important;
+}
+
+#taiyi-plate {
+  max-width: 880px !important;
+  width: min(100%, 880px) !important;
+}
+
+@media (max-width: 1100px) {
+  .tool-workspace.main-container {
+    gap: 18px !important;
+  }
+}
+
+/* ====================================================== */
+/* V1.8：實際縮小中間欄距，將空間明確讓給右側太乙圓盤     */
+/* 以 V1.6 為基礎：左欄寬度不變，只縮小 gap 與放大右盤     */
+/* ====================================================== */
+.tool-workspace.main-container {
+  gap: 8px !important;
+}
+
+.tool-workspace > .controls-column {
+  max-width: 380px !important;
+}
+
+.tool-workspace > .plate-column {
+  padding: 10px !important;
+}
+
+#taiyi-plate {
+  max-width: 900px !important;
+  width: min(100%, 900px) !important;
+}
+
+@media (max-width: 1100px) {
+  .tool-workspace.main-container {
+    gap: 18px !important;
+  }
+  #taiyi-plate {
+    max-width: 820px !important;
+    width: min(100%, 820px) !important;
+  }
+}
+
+
+/* V1.9: user requested tighter columns and 920px plate */
+.tool-workspace.main-container { gap: 6px !important; }
+#taiyi-plate { max-width: 920px !important; }
+
+/* ====================================================== */
+/* V1.11：左側資訊區調整為 410px                         */
+/* 說明：依使用者指定，將左側資訊區由 V1.10 的 430px 回調 */
+/* 為 410px，保留左右 gap 與右側圓盤設定。               */
+/* ====================================================== */
+.tool-workspace.main-container {
+  grid-template-columns: 410px minmax(0, 1fr) !important;
+  gap: 6px !important;
+  max-width: 1280px !important;
+}
+
+.tool-workspace > .controls-column {
+  max-width: 410px !important;
+  width: 410px !important;
+}
+
+.tool-workspace > .plate-column {
+  padding: 10px !important;
+}
+
+#taiyi-plate {
+  max-width: 900px !important;
+  width: min(100%, 900px) !important;
+}
+
+@media (max-width: 1100px) {
+  .tool-workspace.main-container {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+    max-width: 960px !important;
+  }
+
+  .tool-workspace > .controls-column {
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  #taiyi-plate {
+    max-width: 820px !important;
+    width: min(100%, 820px) !important;
+  }
+}
+
+/* ====================================================== */
+/* V1.12：開始排盤標題字級與太乙國運「開始國運排盤」一致 */
+/* ====================================================== */
+.section-heading h1 {
+  font-size: clamp(30px, 4vw, 48px) !important;
+  letter-spacing: .14em !important;
+  line-height: 1.18 !important;
+}
+
+@media (max-width: 720px) {
+  .section-heading h1 {
+    font-size: clamp(28px, 9vw, 42px) !important;
+  }
+}
+
+/* ======================================================
+   V1.13：統一按鈕 hover 陰影效果
+   讓太乙人道命法的按鈕互動感與太乙國運一致
+   ====================================================== */
+.action-btn {
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease !important;
+}
+
+.action-btn:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  background: rgba(255, 250, 240, 0.96) !important;
+  border-color: rgba(185, 154, 93, 0.65) !important;
+  box-shadow: 0 10px 20px rgba(38, 53, 43, 0.08) !important;
+}
+
+.action-btn.calculate-highlight:hover:not(:disabled),
+#calculate-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--green-dark), #243428) !important;
+  color: #fffaf0 !important;
+  box-shadow: 0 14px 26px rgba(53, 72, 56, 0.18) !important;
+}
+
+#ai-summary-controls button {
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease !important;
+}
+
+#ai-summary-controls button:hover:not(:disabled) {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 20px rgba(38, 53, 43, 0.08) !important;
+}
+
+/* ====================================================== */
+/* V1.14：移除左側結果區「流日推演」淡藍／淡灰底框        */
+/* ====================================================== */
+#calculation-summary div[style*="流日推演"],
+#calculation-summary div[style*="background-color: #f8f9fa"],
+#calculation-summary div[style*="background-color:#f8f9fa"],
+#calculation-summary div[style*="border-left: 4px solid #ff8c00"],
+#calculation-summary div[style*="border-left:4px solid #ff8c00"] {
+  background: transparent !important;
+  background-color: transparent !important;
+  border-left: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin-top: 12px !important;
+}
+
+/* ======================================================
+   V1.15：標題區位置與太乙國運對齊
+   讓「開始排盤」與「開始國運排盤」起始高度一致
+   ====================================================== */
+.tool-page {
+  width: min(1380px, calc(100% - 28px)) !important;
+  padding: 36px 0 30px !important;
+}
+
+.tool-section-standalone {
+  padding-top: 4px !important;
+}
+
+.tool-title-heading,
+.section-heading.tool-title-heading {
+  margin-top: 0 !important;
+  margin-bottom: 8px !important;
+}
+
+.tool-section-standalone .tool-intro {
+  margin: 0 auto 26px !important;
+}
+
+@media (max-width: 720px) {
+  .tool-page {
+    width: min(100% - 20px, 1380px) !important;
+    padding-top: 24px !important;
+  }
+}
+
+
+/* ======================================================
+   V1.16：PDF 報告美化版
+   將「輸出PDF報告」改為正式報告書排版，而非單純截取操作畫面
+   ====================================================== */
+#pdf-report-layout {
+  position: fixed;
+  left: -99999px;
+  top: 0;
+  width: 900px;
+  padding: 34px 38px 42px;
+  background:
+    radial-gradient(circle at top right, rgba(185, 154, 93, .16), transparent 32%),
+    linear-gradient(180deg, #fffaf0 0%, #f7f1e6 100%);
+  color: #26352b;
+  font-family: 'BiauKaiWeb', 'Noto Serif TC', serif;
+  box-sizing: border-box;
+  line-height: 1.72;
+}
+
+#pdf-report-layout * {
+  box-sizing: border-box;
+}
+
+.pdf-cover {
+  min-height: 250px;
+  padding: 36px 34px;
+  border: 1px solid rgba(185, 154, 93, .5);
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(255, 250, 240, .94), rgba(247, 241, 230, .84)),
+    radial-gradient(circle at 85% 20%, rgba(81, 104, 79, .12), transparent 34%);
+  box-shadow: 0 18px 42px rgba(38, 53, 43, .08);
+  margin-bottom: 24px;
+  page-break-inside: avoid;
+}
+
+.pdf-kicker {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(185, 154, 93, .55);
+  color: #7f6638;
+  font-family: Georgia, serif;
+  font-size: 11px;
+  letter-spacing: .16em;
+  margin-bottom: 16px;
+}
+
+.pdf-cover h1 {
+  margin: 0 0 12px;
+  color: #26352b;
+  font-size: 34px;
+  letter-spacing: .08em;
+  line-height: 1.25;
+}
+
+.pdf-cover p {
+  max-width: 620px;
+  margin: 0;
+  color: #6f7568;
+  font-size: 16px;
+}
+
+.pdf-cover-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+
+.pdf-cover-meta span {
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .68);
+  border: 1px solid rgba(222, 209, 183, .8);
+  color: #354838;
+  font-size: 13px;
+}
+
+.pdf-section {
+  margin: 0 0 18px;
+  padding: 22px 24px;
+  border-radius: 22px;
+  background: rgba(255, 250, 240, .92);
+  border: 1px solid rgba(222, 209, 183, .88);
+  box-shadow: 0 10px 28px rgba(38, 53, 43, .055);
+  page-break-inside: auto;
+}
+
+.pdf-section.pdf-no-break,
+.pdf-no-break {
+  page-break-inside: avoid;
+}
+
+.pdf-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  color: #354838;
+  font-size: 20px;
+  letter-spacing: .08em;
+  border-bottom: 1px solid rgba(185, 154, 93, .35);
+  padding-bottom: 10px;
+}
+
+.pdf-section h2::before {
+  content: '';
+  width: 8px;
+  height: 22px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #b99a5d, #51684f);
+}
+
+.pdf-section-body {
+  font-size: 14px;
+  color: #26352b;
+}
+
+.pdf-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pdf-info-card {
+  min-height: 58px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .72);
+  border: 1px solid rgba(222, 209, 183, .82);
+}
+
+.pdf-info-card span {
+  display: block;
+  margin-bottom: 4px;
+  color: #8a7a58;
+  font-size: 12px;
+  letter-spacing: .08em;
+}
+
+.pdf-info-card strong {
+  display: block;
+  color: #26352b;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.pdf-result-grid {
+  margin-top: 14px;
+}
+
+#pdf-report-layout #bazi-pillars-container {
+  display: flex !important;
+  justify-content: center;
+  gap: 10px;
+  margin: 10px auto 14px;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(247, 241, 230, .64);
+  border: 1px solid rgba(222, 209, 183, .72);
+}
+
+#pdf-report-layout .pillar {
+  width: 72px;
+  min-height: 110px;
+  border-radius: 16px;
+  background: #fffdf7;
+  border: 1px solid rgba(185, 154, 93, .45);
+  box-shadow: none;
+}
+
+#pdf-report-layout .pillar-title {
+  color: #7f6638;
+  font-size: 13px;
+}
+
+#pdf-report-layout .pillar-char {
+  color: #26352b;
+  font-size: 23px;
+}
+
+.pdf-plate-frame,
+.pdf-chart-frame {
+  text-align: center;
+  border-radius: 20px;
+  background: #fffdf7;
+  border: 1px solid rgba(222, 209, 183, .82);
+  padding: 14px;
+  overflow: hidden;
+}
+
+.pdf-plate-frame img {
+  display: block;
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.pdf-chart-frame img {
+  display: block;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+#pdf-report-layout .info-box,
+#pdf-report-layout #calculation-summary,
+#pdf-report-layout #star-strength-info,
+#pdf-report-layout #luma-info,
+#pdf-report-layout #kejia-years-info,
+#pdf-report-layout #strength-info,
+#pdf-report-layout #remedy-info,
+#pdf-report-layout #ai-summary-output,
+#pdf-report-layout #n8n-ai-output {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: #26352b !important;
+}
+
+#pdf-report-layout h3,
+#pdf-report-layout h4 {
+  color: #354838;
+  margin: 12px 0 8px;
+}
+
+#pdf-report-layout p {
+  margin: 0 0 9px;
+}
+
+#pdf-report-layout ul,
+#pdf-report-layout ol {
+  margin: 8px 0 8px 22px;
+  padding: 0;
+}
+
+.pdf-compact {
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+.pdf-ai-section {
+  background: rgba(255, 255, 255, .74);
+}
+
+.pdf-muted {
+  color: #7d8278;
+  font-size: 13px;
+}
+
+.pdf-footer-note {
+  margin-top: 18px;
+  padding: 14px 18px;
+  color: #7d8278;
+  text-align: center;
+  font-size: 12px;
+  border-top: 1px solid rgba(185, 154, 93, .35);
+}
+
+
+/* ======================================================
+   V17：小六命理網 Logo 套用
+   - 標題列加入品牌 Logo
+   - AI 輸出／解說區塊加入品牌 Logo
+====================================================== */
+.title-logo-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+}
+
+.title-logo {
+    width: 54px;
+    height: 54px;
+    object-fit: contain;
+    flex: 0 0 auto;
+    filter: drop-shadow(0 6px 12px rgba(80, 94, 56, .14));
+}
+
+.ai-output-title,
+.ai-output-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ai-output-title {
+    justify-content: flex-start;
+}
+
+.ai-output-brand {
+    margin: 0 0 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(184, 154, 93, .22);
+    color: #3f5f56;
+    font-family: 'BiauKaiWeb', 'DFKai-SB', 'KaiTi', 'Noto Serif TC', 'PMingLiU', 'MingLiU', serif;
+    font-weight: 700;
+    letter-spacing: .08em;
+    font-size: 1.05rem;
+}
+
+.ai-output-logo {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    flex: 0 0 auto;
+    filter: drop-shadow(0 4px 8px rgba(80, 94, 56, .12));
+}
+
+@media (max-width: 640px) {
+    .title-logo-wrap {
+        gap: 10px;
+    }
+
+    .title-logo {
+        width: 42px;
+        height: 42px;
+    }
+
+    .ai-output-logo {
+        width: 30px;
+        height: 30px;
+    }
+}
+
+
+/* ======================================================
+   V18：Logo 取代「開始排盤」標題
+====================================================== */
+.logo-only-title {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-brand-logo {
+    width: 88px;
+    height: 88px;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 10px 22px rgba(80, 94, 56, .14));
+}
+
+.tool-title-heading:has(.hero-brand-logo) {
+    margin-bottom: 14px;
+}
+
+.tool-title-heading:has(.hero-brand-logo) > span {
+    align-self: center;
+}
+
+@media (max-width: 640px) {
+    .hero-brand-logo {
+        width: 104px;
+        height: 104px;
+    }
+}
+
+
+/* ======================================================
+   V19：PDF 亂碼修正
+   - PDF 改用高解析圖片分頁輸出，避免 jsPDF 中文字型亂碼
+   ====================================================== */
+#pdf-report-layout.pdf-raster-output {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+#pdf-report-layout.pdf-raster-output,
+#pdf-report-layout.pdf-raster-output * {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: geometricPrecision;
+}
+
+
+/* ======================================================
+   V21：PDF 整頁淡米黃底修正
+   - 每頁 PDF 由 script.js 先鋪滿 #fffaf0
+   - 報告容器本身也保持同色背景，避免只在文字行下方出現黃底
+====================================================== */
+#pdf-report-layout,
+#pdf-report-layout.pdf-raster-output,
+#pdf-report-layout .pdf-page,
+#pdf-report-layout .pdf-section,
+#pdf-report-layout .pdf-report-body {
+    background-color: #fffaf0 !important;
+}
+
+#pdf-report-layout p,
+#pdf-report-layout li,
+#pdf-report-layout div {
+    background-clip: padding-box;
+}
+
+
+/* ======================================================
+   V22：PDF 流月卦象條列美化
+   - 每月獨立條列，避免十二個月份擠成同一段
+====================================================== */
+#pdf-report-layout .pdf-monthly-gua-list {
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+}
+
+#pdf-report-layout .pdf-monthly-gua-list li {
+    position: relative;
+    margin: 0;
+    padding: 8px 12px 8px 20px;
+    border-left: 3px solid #b89a5d;
+    background: rgba(255, 250, 240, .94);
+    border-radius: 7px;
+    line-height: 1.85;
+    color: #37423a;
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
+#pdf-report-layout .pdf-monthly-gua-list li::before {
+    content: '•';
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    color: #b86b3f;
+    font-weight: 700;
+}
+
+#pdf-report-layout .pdf-monthly-gua-list strong {
+    color: #b35f36;
+    font-weight: 700;
+    margin-right: 2px;
+}
+
+
+/* ======================================================
+   V23：沿用 V1.19 PDF 分頁設定
+   - PDF 改回整份報告連續切片分頁
+   - 保留 V22 的流月條列與 V21 的整頁米黃底
+====================================================== */
+#pdf-report-layout {
+    width: 900px !important;
+    padding: 20px 24px !important;
+    background-color: #fffaf0 !important;
+}
+
+#pdf-report-layout .pdf-cover {
+    padding: 18px 20px 14px !important;
+    margin-bottom: 14px !important;
+}
+
+#pdf-report-layout .pdf-section {
+    margin: 0 0 14px !important;
+    padding: 12px 14px !important;
+}
+
+#pdf-report-layout .pdf-section h2 {
+    margin: 0 0 8px !important;
+    padding-bottom: 6px !important;
+}
+
+#pdf-report-layout .pdf-section-body p {
+    margin: 0 0 8px !important;
+    line-height: 1.78 !important;
+}
+
+#pdf-report-layout .pdf-monthly-gua-list {
+    gap: 5px !important;
+}
+
+#pdf-report-layout .pdf-monthly-gua-list li {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+    line-height: 1.68 !important;
+}
