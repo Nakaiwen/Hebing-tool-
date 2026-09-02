@@ -255,13 +255,13 @@
      * @returns {Object} { yearPillar, monthPillar, dayPillar, hourPillar, lunarInfo }
      */
     /**
-     * 節氣資料防護（M2）：solar-lunar 的精確節氣表僅涵蓋 1930–2050。
+     * 節氣資料防護（M2）：solar-lunar 的精確節氣表僅涵蓋 1930–2100。
      * 超出範圍時 getTerm 回 0，年/月柱會「默默排錯」（如 1920 年柱差一年、月柱空白；
-     * 2060 月柱恆為子月）。此處以資料探測（非寫死範圍）擋下，拋明確錯誤。
+     * 2110 月柱恆為子月）。此處以資料探測（非寫死範圍）擋下，拋明確錯誤。
      */
     function _assertTermData(sl, year, what) {
         if (typeof sl.getTerm === 'function' && !sl.getTerm(year, 3)) {
-            throw new Error('西元 ' + year + ' 年超出節氣資料範圍（1930–2050），無法準確排' + (what || '盤') + '。');
+            throw new Error('西元 ' + year + ' 年超出節氣資料範圍（1930–2100），無法準確排' + (what || '盤') + '。');
         }
     }
 
@@ -2037,7 +2037,7 @@
             candidates.sort((a, b) => b - a);
         }
         if (!candidates.length) {
-            // 節氣資料不足（如 2050 年末順排需 2051 年節氣）→ 明確標記，勿默默回 0 歲（M2）
+            // 節氣資料不足（如 2100 年末順排需 2101 年節氣）→ 明確標記，勿默默回 0 歲（M2）
             return { startAge: 0, days: 0, dataMissing: true };
         }
         const days = Math.abs(candidates[0] - birthMs) / 86400000;

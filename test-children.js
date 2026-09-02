@@ -120,7 +120,7 @@ for (const c of CASES) {
   }
   // 流年資料 v2：大運半分基礎、分項可驗算，並與 annualCurveHtml SVG 反解逐年全等
   ok(Array.isArray(d.annual) && d.annual.length >= 50, c.label + '：流年資料存在（' + (d.annual ? d.annual.length : 0) + ' 年）');
-  ok(d.annual[d.annual.length - 1].year <= 2050, c.label + '：流年截斷不超過 2050（末年 ' + d.annual[d.annual.length - 1].year + '）');
+  ok(d.annual[d.annual.length - 1].year <= 2100 && d.annual[d.annual.length - 1].year > 2050, c.label + '：流年可越過 2050、不超過 2100（末年 ' + d.annual[d.annual.length - 1].year + '）');
   ok(d.annual.every(a => a.luckGz && isFinite(a.luckScore)), c.label + '：每年皆帶所處大運干支與大運分');
   ok(d.annual.every(a => Array.isArray(a.parts) && a.parts.reduce((n, x) => n + x.delta, 0) === a.score), c.label + '：流年 parts 分項總和===score');
   ok(d.annual.every(a => a.parts[0] && /大運.*半分基礎/.test(a.parts[0].label) && a.parts[0].delta === a.luckScore / 2), c.label + '：流年基礎分===當年大運分 × 1/2');

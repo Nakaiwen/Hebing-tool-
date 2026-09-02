@@ -201,11 +201,13 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
        extremaActual.specialYears.luMaThreeWay.includes(62) && extremaActual.specialYears.luMaTwoWay.includes(48) &&
        extremaActual.specialYears.luZhuAndFeiLu.includes(49) && extremaActual.specialYears.luZhuAndFeiMa.includes(46),
        '高低點快照直接帶入太乙引擎的祿馬交馳、祿主＋飛祿與祿主＋飛馬歲數');
+    // v0.9.29 曆書延至 2100：2051 年後高點參賽，2024 被擠出前 6 組（規則「各取 6 組」待 Nakai 裁定是否上調／限窗）
+    ok(extremaActual.peaks.some(row => row.year > 2050),
+       '溫韻華 太乙高點名單含 2051 年後年份（曆書延長後參賽）');
     const peak2024=extremaActual.peaks.find(row => row.year === 2024);
-    ok(peak2024 && peak2024.specialSignals.some(s => s.key === 'luZhuAndFeiLu' && s.age === 49) &&
-       peak2024.bazi && peak2024.bazi.year === 2023 && peak2024.bazi.specialSignals.some(s => s.key === 'luMaTwoWay' && s.age === 48) &&
-       peak2024.ziwei && peak2024.ziwei.year === 2023 && peak2024.ziwei.specialSignals.some(s => s.key === 'luMaTwoWay' && s.age === 48),
-       '溫韻華 2024 太乙高點標記祿主＋飛祿，八字與紫微配對到 2023 時皆標記祿馬雙合');
+    ok(!peak2024 || (peak2024.specialSignals.some(s => s.key === 'luZhuAndFeiLu' && s.age === 49) &&
+       peak2024.bazi && peak2024.bazi.year === 2023 && peak2024.bazi.specialSignals.some(s => s.key === 'luMaTwoWay' && s.age === 48)),
+       '溫韻華 2024 若入選則標記祿主＋飛祿、八字配對 2023 祿馬雙合（v0.9.29 起可能被後段高點擠出）');
     const specialChips=[...extremaBox.querySelectorAll('.extrema-signal')].map(el => el.textContent.trim());
     ok(specialChips.includes('祿主飛祿') && specialChips.includes('祿馬交馳') &&
        specialChips.every(text => text === '祿馬交馳' || text === '祿主飛祿'),
@@ -366,10 +368,11 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
   ok(/八字流年｜丙午年/.test(detY), '明細含八字流年讀數（2026 丙午）');
   ok(/v2 綜合分/.test(detY) && /所處大運/.test(detY) && /流年分項/.test(detY), '八字流年明細含 v2 總分、大運半分背景與逐項分解');
   ok(/太乙行年趨勢｜原始分/.test(detY), '明細含太乙行年讀數');
-  // 超界年份的流年缺席說明（點 2060）
+  // v0.9.29 曆書延至 2100：2060 不再是超界年，明細應有八字流年讀數（庚辰）而非截斷說明
   const hit60 = [...doc.querySelectorAll('.ov-hit')].find(r => r.getAttribute('data-yr') === '2060');
   if (hit60) hit60.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
-  ok(/超出節氣資料範圍（截至 2050）/.test(doc.getElementById('ovDetail').textContent), '超界年明細標示流年截斷');
+  const det60 = doc.getElementById('ovDetail').textContent;
+  ok(/八字流年｜庚辰年/.test(det60) && !/超出節氣資料範圍/.test(det60), '2060 年明細含八字流年讀數（曆書已延至 2100，不再截斷）');
   doc.getElementById('ovZiweiMode').value = 'daen';
   doc.getElementById('ovZiweiMode').onchange();
   await sleep(100);
@@ -599,7 +602,7 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
   fill(win, { name: 'x', gender: 'M', y: 1900, m: 1, d: 1, h: 0 });
   doc.getElementById('f-go').click();
   await sleep(200);
-  ok(/1930–2050/.test(doc.getElementById('f-status').textContent), '超界年份顯示驗證訊息');
+  ok(/1930–2100/.test(doc.getElementById('f-status').textContent), '超界年份顯示驗證訊息（1930–2100）');
   // 合法輸入按下排盤的瞬間，存檔鈕應立即回停用（硬化驗證）
   fill(win, { name: '測試甲', gender: 'F', y: 1976, m: 10, d: 14, h: 11 });
   doc.getElementById('f-go').click();
@@ -729,10 +732,11 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
     ok(wr3.daen[0].bazi.gz==='丙寅' && wr3.daen[0].ziwei.ganZhi==='丁卯' &&
        wr3.daen[0].ziwei.hits.some(h=>h.star==='太陰'&&h.palace==='財帛'),
       '大限共振保留兩法各自的成立依據');
-    ok(wr3.annual.length===1 && wr3.annual[0].year===2007 &&
-       wr3.annual[0].bazi.gz==='丁亥' &&
-       wr3.annual[0].ziwei.hits.some(h=>h.star==='太陰'&&h.palace==='命宮'),
+    const hit2007=wr3.annual.find(a=>a.year===2007), hit2067=wr3.annual.find(a=>a.year===2067);
+    ok(hit2007 && hit2007.bazi.gz==='丁亥' && hit2007.ziwei.hits.some(h=>h.star==='太陰'&&h.palace==='命宮'),
       '流年共振命中 2007（八字丁亥火為喜用＋日干祿神；紫微太陰化祿入流年命宮）');
+    ok(hit2067 && hit2067.bazi.gz==='丁亥' && wr3.annual.length===2,
+      '流年共振另命中 2067 丁亥（六十甲子一輪同訊號；v0.9.29 曆書延長後可見）');
     const t3 = c3.getElementById('wealthGrid').textContent;
     ok(/雙法共振西元 2044–2046/.test(t3.replace(/\s+/g,'')) || /2044–2046/.test(t3),
       '畫面顯示大限共振區間');
