@@ -2623,6 +2623,96 @@ function renderFortuneChart(ageLabels, scoreData, overlapFlags) {
     }
     return results;
     }
+    // ▼▼▼ 計算「百六小限論月落宮」：從當歲百六小限宮起正月，男順女逆，一月一宮（月序以節氣換月：正月＝立春起）▼▼▼
+    // 注意：這裡的方向是「男順女逆」，與百六小限本身（男逆女順）相反。
+    function calculateBaiLiuLiuYue(baiLiuXiaoXianResult, gender, currentUserAge, chartModel, arrangedLifePalaces) {
+        if (!baiLiuXiaoXianResult || currentUserAge === undefined) return [];
+        // 1. 找出「當歲」落在百六小限的哪一宮，作為正月起宮
+        let startPalaceId = null;
+        for (const [palaceId, ages] of Object.entries(baiLiuXiaoXianResult)) {
+            if (Array.isArray(ages) && ages.includes(currentUserAge)) { startPalaceId = palaceId; break; }
+        }
+        if (!startPalaceId) return [];
+        const startIndex = VALID_PALACES_CLOCKWISE.indexOf(startPalaceId);
+        if (startIndex === -1) return [];
+        // 2. 男順女逆，一月一宮
+        const direction = (gender === '男') ? 1 : -1;
+        const MONTH_LABELS = ['正月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+        const results = [];
+        for (let m = 0; m < 12; m++) {
+            const palaceIndex = (startIndex + m * direction + 144) % 12;
+            const palaceId = VALID_PALACES_CLOCKWISE[palaceIndex];
+            const branch = EARTHLY_BRANCHES[palaceIndex];
+            const lifePalaceName = (arrangedLifePalaces && arrangedLifePalaces[palaceIndex]) ? arrangedLifePalaces[palaceIndex] : '';
+            // 3. 帶出該宮的飛星（本命星耀＋強旺＋化曜），供逐月吉凶判讀
+            const stars = [];
+            if (chartModel && chartModel[palaceId] && chartModel[palaceId].stars) {
+                for (const [starName, starInfo] of Object.entries(chartModel[palaceId].stars)) {
+                    stars.push({ name: starName, strength: starInfo.strength || '', huaYao: starInfo.huaYao || [] });
+                }
+            }
+            results.push({ month: m + 1, monthLabel: MONTH_LABELS[m], palaceId, branch, lifePalaceName, stars });
+        }
+        return results;
+    }
+    // ▼▼▼ 計算「太乙小限」：受氣宮天干定起宮起歲（與百六小限共用規則表），順逆依天干陰陽分流 ▼▼▼
+    // 陽干（甲丙戊庚壬）：男逆女順；陰干（乙丁己辛癸）：男順女逆。一年一宮，數至當歲。
+    // 未及起歲者（如甲己5歲起午的1-4歲），以負偏移自起宮「反方向」逆推——Nakai 2026-08-30 確認此為正式規則。
+    function calculateTaiYiXiaoXian(shouQiGong, gender, currentUserAge) {
+        if (!shouQiGong || !shouQiGong.palace || currentUserAge === undefined) return null;
+        const shouQiStem = shouQiGong.palace.charAt(0);
+        const rule = BAI_LIU_XIAO_XIAN_RULES[shouQiStem]; // 起宮起歲表與百六小限相同
+        if (!rule) return null;
+        const { startBranch, startAge } = rule;
+        const YANG_STEMS = ['甲', '丙', '戊', '庚', '壬'];
+        const isYang = YANG_STEMS.includes(shouQiStem);
+        // 陽干男逆女順；陰干男順女逆
+        const direction = isYang
+            ? ((gender === '男') ? -1 : 1)
+            : ((gender === '男') ? 1 : -1);
+        const startPalaceIndex = EARTHLY_BRANCHES.indexOf(startBranch);
+        // 當歲的太乙小限宮
+        const currentIndex = (startPalaceIndex + (currentUserAge - startAge) * direction + 1440) % 12;
+        // 同時輸出前5年～未來18年的逐歲落宮（與百六小限窗口一致，便於對照）
+        const agesByPalace = {};
+        for (let age = currentUserAge - 5; age <= currentUserAge + 18; age++) {
+            if (age < 1) continue;
+            const idx = (startPalaceIndex + (age - startAge) * direction + 1440) % 12;
+            const pid = VALID_PALACES_CLOCKWISE[idx];
+            if (!agesByPalace[pid]) agesByPalace[pid] = [];
+            agesByPalace[pid].push(age);
+        }
+        return {
+            shouQiStem, startBranch, startAge, direction,
+            directionText: direction === 1 ? '順行' : '逆行',
+            currentPalaceId: VALID_PALACES_CLOCKWISE[currentIndex],
+            currentBranch: EARTHLY_BRANCHES[currentIndex],
+            agesByPalace
+        };
+    }
+    // ▼▼▼ 計算「小限月運」：從太乙小限宮起正月，方向與太乙小限相反（限順則月逆、限逆則月順），一月一宮（月序以節氣換月：正月＝立春起）▼▼▼
+    function calculateXiaoXianYueYun(taiYiXiaoXianResult, chartModel, arrangedLifePalaces) {
+        if (!taiYiXiaoXianResult || !taiYiXiaoXianResult.currentPalaceId) return [];
+        const startIndex = VALID_PALACES_CLOCKWISE.indexOf(taiYiXiaoXianResult.currentPalaceId);
+        if (startIndex === -1) return [];
+        const direction = -taiYiXiaoXianResult.direction; // 與太乙小限相反
+        const MONTH_LABELS = ['正月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+        const results = [];
+        for (let m = 0; m < 12; m++) {
+            const palaceIndex = (startIndex + m * direction + 144) % 12;
+            const palaceId = VALID_PALACES_CLOCKWISE[palaceIndex];
+            const branch = EARTHLY_BRANCHES[palaceIndex];
+            const lifePalaceName = (arrangedLifePalaces && arrangedLifePalaces[palaceIndex]) ? arrangedLifePalaces[palaceIndex] : '';
+            const stars = [];
+            if (chartModel && chartModel[palaceId] && chartModel[palaceId].stars) {
+                for (const [starName, starInfo] of Object.entries(chartModel[palaceId].stars)) {
+                    stars.push({ name: starName, strength: starInfo.strength || '', huaYao: starInfo.huaYao || [] });
+                }
+            }
+            results.push({ month: m + 1, monthLabel: MONTH_LABELS[m], palaceId, branch, lifePalaceName, stars });
+        }
+        return results;
+    }
     // ▼▼▼ 計算「大遊真限」(完整序列)的函式 ▼▼▼
     function calculateDaYouZhenXian(hourBranch) {
     if (!hourBranch) return [];
@@ -4182,6 +4272,19 @@ function renderFortuneChart(ageLabels, scoreData, overlapFlags) {
             return 11; // 子月
         }
         return 12; // 預設為丑月
+    }
+
+    // ▼▼▼ 取得「分析年份」對應的當前節氣月（立春為界；今天不在該命理年則回傳 null）▼▼▼
+    // 兩個月運表（百六小限論月、小限月運）皆以節氣換月：正月＝立春起、二月＝驚蟄起……
+    function getCurrentJieQiMonthForYear(targetYear) {
+        const now = new Date();
+        const jieQiMonth = getSolarTermMonth(now);
+        // 命理年以立春為界：立春前屬前一年
+        let mingLiYear = now.getFullYear();
+        const liChunTime = solarLunar.getTerm(now.getFullYear(), 3); // 3 = 立春
+        if (now.getTime() < liChunTime) mingLiYear -= 1;
+        if (Number(targetYear) !== mingLiYear) return null;
+        return jieQiMonth;
     }
 
     // ▼▼▼ 根據西元年查詢該年干支的函式 ▼▼▼
@@ -6147,6 +6250,71 @@ function renderFortuneChart(ageLabels, scoreData, overlapFlags) {
         if (kejiaYearsInfoDiv) {
             kejiaYearsInfoDiv.innerHTML = formatKeJiaYearsInfo(dataForCalculation.keJiaYears);
         }
+
+        // ▼▼▼ 百六小限論月落宮 資訊框 ▼▼▼
+        const baiLiuLiuYueInfoDiv = document.getElementById('bailiu-liuyue-info');
+        if (baiLiuLiuYueInfoDiv) {
+            const lyResult = dataForCalculation.baiLiuLiuYueResult || [];
+            if (lyResult.length === 0) {
+                baiLiuLiuYueInfoDiv.innerHTML = '<strong>百六小限論月落宮：</strong><br>無法定位當歲百六小限宮。';
+            } else {
+                const dirText = (dataForCalculation.gender === '男') ? '男順行' : '女逆行';
+                const jqMonthBL = getCurrentJieQiMonthForYear(dataForCalculation.targetYear);
+                let html = `<strong>百六小限論月落宮</strong>（${dataForCalculation.currentUserAge}歲小限起正月，${dirText}，以節氣換月）：`;
+                html += '<table style="width:100%; border-collapse:collapse; margin-top:6px; font-size:0.9em;">';
+                lyResult.forEach(row => {
+                    const starText = row.stars.length > 0
+                        ? row.stars.map(s => {
+                            let t = s.name;
+                            if (s.strength) t += `(${s.strength})`;
+                            if (s.huaYao && s.huaYao.length > 0) t += `〔${s.huaYao.join('、')}〕`;
+                            return t;
+                          }).join('、')
+                        : '—';
+                    const isCurrent = (jqMonthBL !== null && row.month === jqMonthBL);
+                    const rowStyle = isCurrent ? 'border-bottom:1px solid #eee; background:#fdf3e0; font-weight:bold;' : 'border-bottom:1px solid #eee;';
+                    const monthCell = isCurrent ? `${row.monthLabel} ◀本月` : row.monthLabel;
+                    html += `<tr style="${rowStyle}"><td style="padding:2px 6px; white-space:nowrap;">${monthCell}</td><td style="padding:2px 6px; white-space:nowrap;">${row.branch}（${row.lifePalaceName}）</td><td style="padding:2px 6px;">${starText}</td></tr>`;
+                });
+                html += '</table>';
+                baiLiuLiuYueInfoDiv.innerHTML = html;
+            }
+        }
+
+        // ▼▼▼ 太乙小限與小限月運 資訊框 ▼▼▼
+        const taiYiXiaoXianInfoDiv = document.getElementById('taiyi-xiaoxian-info');
+        if (taiYiXiaoXianInfoDiv) {
+            const txx = dataForCalculation.taiYiXiaoXianResult;
+            const yy = dataForCalculation.xiaoXianYueYunResult || [];
+            if (!txx) {
+                taiYiXiaoXianInfoDiv.innerHTML = '<strong>太乙小限：</strong><br>無法由受氣宮定出太乙小限。';
+            } else {
+                const yueDirText = (-txx.direction === 1) ? '順行' : '逆行';
+                const jqMonthXX = getCurrentJieQiMonthForYear(dataForCalculation.targetYear);
+                let html = `<strong>太乙小限</strong>（受氣${txx.shouQiStem}干，${txx.startAge}歲起${txx.startBranch}宮，${txx.directionText}）：`;
+                html += `${dataForCalculation.currentUserAge}歲小限在 <strong>${txx.currentBranch}宮</strong>`;
+                html += `<br><strong>小限月運</strong>（起正月於${txx.currentBranch}宮，${yueDirText}，以節氣換月）：`;
+                if (yy.length > 0) {
+                    html += '<table style="width:100%; border-collapse:collapse; margin-top:6px; font-size:0.9em;">';
+                    yy.forEach(row => {
+                        const starText = row.stars.length > 0
+                            ? row.stars.map(s => {
+                                let t = s.name;
+                                if (s.strength) t += `(${s.strength})`;
+                                if (s.huaYao && s.huaYao.length > 0) t += `〔${s.huaYao.join('、')}〕`;
+                                return t;
+                              }).join('、')
+                            : '—';
+                        const isCurrent = (jqMonthXX !== null && row.month === jqMonthXX);
+                        const rowStyle = isCurrent ? 'border-bottom:1px solid #eee; background:#fdf3e0; font-weight:bold;' : 'border-bottom:1px solid #eee;';
+                        const monthCell = isCurrent ? `${row.monthLabel} ◀本月` : row.monthLabel;
+                        html += `<tr style="${rowStyle}"><td style="padding:2px 6px; white-space:nowrap;">${monthCell}</td><td style="padding:2px 6px; white-space:nowrap;">${row.branch}（${row.lifePalaceName}）</td><td style="padding:2px 6px;">${starText}</td></tr>`;
+                    });
+                    html += '</table>';
+                }
+                taiYiXiaoXianInfoDiv.innerHTML = html;
+            }
+        }
     }
 
 
@@ -6430,6 +6598,10 @@ function renderFortuneChart(ageLabels, scoreData, overlapFlags) {
         dataForCalculation.chartModel = buildChartModel(dataForCalculation);
         dataForCalculation.remedySuggestions = analyzeRemedySuggestions(dataForCalculation.chartModel, dataForCalculation.arrangedLifePalaces);
         dataForCalculation.strengthSuggestions = analyzeStrengthSuggestions(dataForCalculation.chartModel);
+        dataForCalculation.baiLiuLiuYueResult = calculateBaiLiuLiuYue(dataForCalculation.baiLiuXiaoXianResult, dataForCalculation.gender, dataForCalculation.currentUserAge, dataForCalculation.chartModel, dataForCalculation.arrangedLifePalaces);
+        dataForCalculation.taiYiXiaoXianResult = calculateTaiYiXiaoXian(dataForCalculation.shouQiResult, dataForCalculation.gender, dataForCalculation.currentUserAge);
+        dataForCalculation.xiaoXianYueYunResult = calculateXiaoXianYueYun(dataForCalculation.taiYiXiaoXianResult, dataForCalculation.chartModel, dataForCalculation.arrangedLifePalaces);
+        dataForCalculation.currentJieQiMonth = getCurrentJieQiMonthForYear(dataForCalculation.targetYear); // 排盤當下的節氣月（1=正月/寅月；非該命理年為 null）
         dataForCalculation.keJiaYears = findKeJiaYears(dataForCalculation);
         dataForCalculation.daYouOverlapResult = findDaYouOverlap(dataForCalculation.daYouZhenXianResult, dataForCalculation.daYouResult);
         
@@ -6778,7 +6950,6 @@ if (switchToNationalBtn) {
             }
         });
 }
-
 
     /* ============================================================
        合盤橋接（merge-bridge v1.3 / ext-curve）— 插於 DOMContentLoaded 閉包尾端

@@ -273,6 +273,7 @@ table.node tr.drill-row td{background:#fbf6ea;padding:9px 12px;}
   .center .fnbtns button{font-size:0.64rem;padding:4px 8px;}
 }
 </style>
+<style>.chart-file-actions{margin:12px auto 18px;padding:0 16px;max-width:1100px;}.chart-file-actions .btn-row{margin-top:0;}</style>
 </head>
 <body>
 <h1>紫微斗數盤</h1>
@@ -322,8 +323,9 @@ table.node tr.drill-row td{background:#fbf6ea;padding:9px 12px;}
   <button class="btn-ghost" id="nodeBtn">🗓️ 人生三表</button>
 </div>
 
-<div class="input-card">
-  <div class="input-grid">
+<!-- 合盤版：此區僅保留計算與事件綁定所需節點，命主輸入及存讀檔操作統一由父頁提供。 -->
+<div class="chart-file-actions" hidden style="display:none" aria-hidden="true">
+  <div class="input-grid" hidden style="display:none" aria-hidden="true">
     <div class="field"><label>姓名</label><input id="name" value="Nakai"></div>
     <div class="field"><label>性別</label>
       <select id="gender"><option value="F">女</option><option value="M">男</option></select>
@@ -357,11 +359,11 @@ table.node tr.drill-row td{background:#fbf6ea;padding:9px 12px;}
     </div>
   </div>
   <div class="btn-row">
-    <button class="btn-primary" id="go">排　盤</button>
+    <button class="btn-primary" id="go" hidden style="display:none">排　盤</button>
     <button class="btn-ghost" id="saveBtn">存檔 JSON</button>
     <button class="btn-ghost" id="loadBtn">讀檔 JSON</button>
     <input type="file" id="fileInput" accept="application/json,.json" style="display:none">
-    <span style="font-size:0.74rem;color:var(--muted)">存檔輸出 xiaoliu.ziwei-chart/v2，可供解盤工具讀取（讀檔相容 v1）。</span>
+    
   </div>
 </div>
 
@@ -1347,7 +1349,7 @@ const TYPE_CLS = {主:'major',輔:'aux',煞:'sha',雜:'misc'};
 // 十二宮簡稱（對應 PALACE_NAMES 順序），交友用「奴」與參考盤一致
 const PABBR = ['命','兄','夫','子','財','疾','遷','奴','官','田','福','父'];
 
-let CUR_YEAR=2026;            // 檢視基準年（中宮虛歲/預設運限/本命盤匯出流年），可由頂端「基準年」切換
+let CUR_YEAR=new Date().getFullYear();            // 檢視基準年（中宮虛歲/預設運限/本命盤匯出流年），可由頂端「基準年」切換
 let CHART=null;               // 目前命盤資料，盤別切換時不必重算
 
 // 依目前盤別與運限選擇，算出三層四化的疊加 map
@@ -1579,9 +1581,10 @@ function compute(){
     dp.value=defIdx;
     if(!$('xiaoYear').value) $('xiaoYear').value=CUR_YEAR;
     // 運限（流年/月/日/時）預設：國曆系統日期（流月/日/時用國曆日期換四柱）
+    const today=new Date();
     if(!$('flYear').value)  $('flYear').value=CUR_YEAR;
-    if(!$('flMonth').value) $('flMonth').value=6;
-    if(!$('flDay').value)   $('flDay').value=11;
+    if(!$('flMonth').value) $('flMonth').value=today.getMonth()+1;
+    if(!$('flDay').value)   $('flDay').value=today.getDate();
     render();
     syncAllCustom();
   }catch(err){ alert('排盤失敗：'+err.message); console.error(err); }
@@ -2334,9 +2337,32 @@ $('prevHour').onclick=()=>{ $('h').value=(+$('h').value+11)%12; compute(); };
 $('nextHour').onclick=()=>{ $('h').value=(+$('h').value+1)%12; compute(); };
 // 基準年切換：更新虛歲/預設運限/本命匯出流年，並讓流年·小限·流日的年份跟著走
 $('refYear').oninput=()=>{ const v=+$('refYear').value; if(v>=1900&&v<=2100){ CUR_YEAR=v; $('flYear').value=v; $('xiaoYear').value=v; compute(); if(!$('nodeView').classList.contains('hidden')) renderNodes(); } };
-['panType','daPick','xiaoYear','flYear','flMonth','flDay','flHour'].forEach(id=>{
+// 每次切入深層運限都重新讀取裝置當地時間；手動調整日期時不覆蓋輸入。
+function syncFlowDateToNow(){
+  const now=new Date();
+  const year=now.getFullYear();
+  CUR_YEAR=year;
+  $('refYear').value=String(year);
+  $('xiaoYear').value=String(year);
+  $('flYear').value=String(year);
+  $('flMonth').value=String(now.getMonth()+1);
+  $('flDay').value=String(now.getDate());
+  // 子時 23:00–00:59、丑時 01:00–02:59，依序至亥時 21:00–22:59。
+  $('flHour').value=String(Math.floor((now.getHours()+1)/2)%12);
+}
+$('panType').addEventListener('change',()=>{
+  if(['流月盤','流日盤','流時盤'].includes($('panType').value)){
+    syncFlowDateToNow();
+    compute(); // 同步基準年、大限預設與自製下拉顯示，再重繪盤面。
+  }else{
+    render();
+    syncAllCustom();
+  }
+});
+['daPick','xiaoYear','flYear','flMonth','flDay','flHour'].forEach(id=>{
   const el=$(id); el.addEventListener(el.tagName==='SELECT'?'change':'input', render);
 });
+syncFlowDateToNow();
 compute(); // 載入即以 Nakai 命例排盤
 enhanceAllSelects(); // 把原生 <select> 換成自製下拉（Artifact 沙箱相容）
 </script>

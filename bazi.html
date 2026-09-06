@@ -344,14 +344,16 @@ button {
   .input-grid .field:last-child { grid-column: 1 / -1; }
 }
 </style>
+<style>.chart-file-actions{margin:12px auto 18px;padding:0 16px;max-width:1100px;}.chart-file-actions .btn-row{margin-top:0;}</style>
 </head>
 <body>
 
 <h1>八 字 命 盤</h1>
 <div class="subtitle">小 六 太 乙 · 命 理 工 具</div>
 
-<div class="input-card">
-  <div class="input-grid">
+<!-- 合盤版：此區僅保留計算與事件綁定所需節點，命主輸入及存讀檔操作統一由父頁提供。 -->
+<div class="chart-file-actions" hidden style="display:none" aria-hidden="true">
+  <div class="input-grid" hidden style="display:none" aria-hidden="true">
     <div class="field">
       <label>姓名</label>
       <input type="text" id="in-name" placeholder="命主姓名">
@@ -395,8 +397,8 @@ button {
     </div>
   </div>
   <div class="btn-row">
-    <button class="btn-primary" onclick="runChart()">排盤</button>
-    <button class="btn-ghost" onclick="fillExample()">範例</button>
+    <button class="btn-primary" hidden style="display:none" onclick="runChart()">排盤</button>
+    <button class="btn-ghost" hidden style="display:none" onclick="fillExample()">範例</button>
     <button class="btn-ghost" onclick="document.getElementById('load-file').click()">讀取檔案</button>
   </div>
   <!-- 隱藏的檔案輸入（讀取存檔的 .json）。放在靜態區，不會被重新排盤覆蓋。 -->
@@ -404,7 +406,7 @@ button {
 </div>
 
 <div id="result">
-  <div class="placeholder-msg">輸入生辰資料，按下「排盤」<br>命盤會在這裡顯示</div>
+  <div class="placeholder-msg">在上方輸入生辰資料，按下「合盤排盤」<br>命盤會在這裡顯示</div>
 </div>
 
 <!-- ?v=… 為防快取版本號；改版後更新此數字（YYYYMMDD），瀏覽器才會抓新檔 -->
