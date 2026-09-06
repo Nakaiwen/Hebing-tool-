@@ -274,6 +274,48 @@ table.node tr.drill-row td{background:#fbf6ea;padding:9px 12px;}
 }
 </style>
 <style>.chart-file-actions{margin:12px auto 18px;padding:0 16px;max-width:1100px;}.chart-file-actions .btn-row{margin-top:0;}</style>
+<style id="ziwei-palace-ui">
+/* 十二宮資訊分層：保留原四乘四位置及頁面總寬度。 */
+.board-scroll{overflow-x:auto;overscroll-behavior-x:contain;scrollbar-color:var(--gold) var(--bg);padding-bottom:6px}
+.board-scroll:has(>.board.hidden){display:none}
+.board-hint{display:none;font-size:13px;color:#756650;margin:0 0 8px}
+.board{min-width:840px;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(4,minmax(250px,auto));gap:1px;border:1px solid var(--rule);background:var(--rule);box-shadow:0 3px 14px rgba(42,37,34,.04)}
+.board .cell{min-width:0;min-height:250px;border:0;padding:10px 10px 9px;gap:9px;font-size:14px}
+.board .cell.sanfang{background:#f8f1df}.board .cell.ming{background:#f9ebd9}.board .cell.shen{box-shadow:none}
+.cell-head{display:flex;justify-content:space-between;align-items:flex-start;gap:7px;padding-bottom:7px;border-bottom:1px solid var(--rule)}
+.cell-identity{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.board .cell .pname{font-size:17px;letter-spacing:.06em;line-height:1.4}
+.cell-tags{display:inline-flex;gap:3px}.cell-tags .tag{font-size:12px;line-height:18px;padding:0 4px;border-radius:3px;color:white;white-space:nowrap}
+.cell-tags .tag.ming{background:#977131}.cell-tags .tag.shen{background:#557344}
+.board .cell .gz{font-size:15px;line-height:24px;color:#756650;white-space:nowrap}
+.board .cell .dx{position:static;color:#756650;font-size:12px;line-height:1.5;margin-top:0;font-variant-numeric:tabular-nums}
+.board .cell .proles + .dx{margin-top:6px}
+.board .stars{gap:10px;min-width:0}
+.star-section{min-width:0}.star-section+.star-section{padding-top:7px;border-top:1px dotted var(--rule)}
+.star-section-label{display:flex;justify-content:space-between;align-items:center;font-size:12px;line-height:1.5;color:#7c715f;margin-bottom:5px;letter-spacing:.03em}
+.board .star-row{min-width:0;gap:7px 9px;padding-right:0;align-items:flex-start}
+.board .star-row.majors{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));min-height:0}
+.board .star-row.lucky{min-height:0}
+.board .star{display:flex;flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:3px;max-width:100%;min-width:0;white-space:normal;line-height:1.45}
+.star-core{display:inline-flex;align-items:baseline;white-space:nowrap;gap:2px}
+.board .star-row.majors .star{font-size:19px;font-weight:600}
+.board .star-row.lucky .star{font-size:15px;flex:1 1 72px}
+.board .star-row.minor .star,.board .star-row.flow .star{font-size:13px;flex:0 1 auto}
+.board .star.sha{color:#88614e}.board .star-row.minor .star{color:#6e706b}
+.board .bri,.board .star-row.majors .bri{font-size:12px;color:#807057;font-weight:400;margin-left:0}
+.star-huas{display:contents}
+.board .hua{font-size:13px;font-weight:600;line-height:19px;padding:0 4px;margin:0;border-radius:3px;white-space:nowrap;box-shadow:none}
+.board .hua .lyr{font-size:11px;margin-right:2px;opacity:1}
+.no-major{font-size:14px;color:#81745e;grid-column:1/-1;padding:2px 0}
+.board .cell .footer{position:static;margin-top:auto;padding-top:8px;border-top:1px solid var(--rule);display:block;font-size:13px;color:#756650}
+.board .proles{gap:4px;align-items:flex-start}.board .prole{font-size:12px;line-height:20px;padding:0 5px;white-space:nowrap}
+.board .center{min-width:0;border:0;padding:18px 20px;gap:7px;overflow:visible}
+.board .center .nm{font-size:24px}.board .center .row{font-size:14px;padding:5px 0;flex-direction:row;align-items:baseline;gap:14px}
+.board .center .row span:first-child{font-size:13px;color:#756650;flex-shrink:0}.board .center .row span:last-child{font-size:15px;text-align:right;overflow-wrap:anywhere}
+.board .center .fnbtns button{font-size:13px;padding:6px 12px}
+@media(max-width:880px){.board-hint{display:block}}
+
+</style>
 </head>
 <body>
 <h1>紫微斗數盤</h1>
@@ -367,7 +409,7 @@ table.node tr.drill-row td{background:#fbf6ea;padding:9px 12px;}
   </div>
 </div>
 
-<div id="board" class="board hidden"></div>
+<div class="board-scroll" role="region" aria-label="紫微十二宮命盤，可左右捲動" tabindex="0"><p class="board-hint">十二宮保留完整字級，可左右滑動查看。</p><div id="board" class="board hidden"></div></div>
 
 <!-- 本月能量視圖 -->
 <div id="energyView" class="energy hidden">
@@ -1477,9 +1519,12 @@ function render(){
   if(A.liuStars) A.liuStars.forEach(s=>{(flowByZhi[s.zhi]=flowByZhi[s.zhi]||[]).push(s.name);});
   const starHTML=s=>{
     const cls=TYPE_CLS[s.type]||'misc';
-    let h=`<span class="star ${cls}">${s.name}`;
+    let h=`<span class="star ${cls}"><span class="star-core"><span class="star-name">${s.name}</span>`;
     if(s.brightness) h+=`<span class="bri">${s.brightness}</span>`;
-    h+=huaBadges(s.name)+'</span>';
+    h+='</span>';
+    const badges=huaBadges(s.name);
+    if(badges) h+=`<span class="star-huas">${badges}</span>`;
+    h+='</span>';
     return h;
   };
 
@@ -1492,6 +1537,7 @@ function render(){
     cell.className='cell'+(isSanFang?' sanfang':'')+(p.isMing?' ming':'')+(p.isShen?' shen':'');
     const [r,col]=GRID[z];
     cell.style.gridRow=r; cell.style.gridColumn=col;
+    cell.dataset.branch=p.zhi;cell.setAttribute('role','group');cell.setAttribute('aria-label',`${p.palaceName}宮 ${p.ganZhi}`);
     const rowHTML=arr=>arr.map(starHTML).join('');
     const majors=p.stars.filter(s=>s.type==='主');
     const lucky =p.stars.filter(s=>s.type==='輔'||s.type==='煞');
@@ -1505,16 +1551,17 @@ function render(){
     const roleChips=A.layers.filter(L=>L.zhi>=0)
       .map(L=>`<span class="prole ${ROLE_CLS[L.prefix]}">${L.prefix}${PABBR[(L.zhi-z+12)%12]}</span>`).join('');
     const flow=flowByZhi[z]||[];
-    const flowRow=flow.length?`<div class="star-row flow">${flow.map(n=>`<span class="star flow">${n}</span>`).join('')}</div>`:'';
+    const section=(name,cls,content)=>`<div class="star-section"><div class="star-section-label"><span>${name}</span></div><div class="star-row ${cls}">${content}</div></div>`;
+    const flowRow=flow.length?section('流曜','flow',flow.map(n=>`<span class="star flow"><span class="star-core"><span class="star-name">${n}</span></span></span>`).join('')):'';
     cell.innerHTML=
-      `<div class="dx">${dx}</div>`+
+      `<div class="cell-head"><div class="cell-identity"><span class="pname">${p.palaceName}</span><span class="cell-tags">${tag}</span></div><span class="gz">${p.ganZhi}</span></div>`+
       `<div class="stars">`+
-        `<div class="star-row majors">${rowHTML(majors)}</div>`+
-        `<div class="star-row lucky">${rowHTML(lucky)}</div>`+
-        `<div class="star-row minor">${rowHTML(minor)}</div>`+
+        `<div class="star-section"><div class="star-row majors">${rowHTML(majors)}</div></div>`+
+        (lucky.length?section('輔星・煞曜','lucky',rowHTML(lucky)):'')+
+        (minor.length?section('雜曜','minor',rowHTML(minor)):'')+
         flowRow+
       `</div>`+
-      `<div class="footer"><span class="proles"><span class="pname">${p.palaceName}${tag}</span>${roleChips}</span><span class="gz">${p.ganZhi}</span></div>`;
+      `<div class="footer">${roleChips?`<span class="proles">${roleChips}</span>`:''}<div class="dx">${dx?'大限 '+dx+' 歲':'大限歲段未設定'}</div></div>`;
     board.appendChild(cell);
   }
 
