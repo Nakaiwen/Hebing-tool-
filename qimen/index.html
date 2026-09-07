@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>奇門遁甲・時家轉盤｜小六太乙</title>
+<link rel="stylesheet" href="interface.css">
+</head>
+<body>
+<main>
+  <h1>奇門遁甲<small>小六太乙 · 時家轉盤 · 置閏法</small></h1>
+
+  <div class="datebar">
+    <button id="prev" aria-label="前一天">‹</button>
+    <input type="date" id="date" aria-label="排盤日" min="1931-01-01" max="2100-12-31">
+    <button id="next" aria-label="後一天">›</button>
+    <button id="today">今天</button><button id="now" class="primary">現在</button>
+  </div>
+  <div id="dateStatus" class="date-status" role="status"></div>
+  <div class="dayline" id="dayline"></div>
+
+  <div class="section-line"><span>十二時辰 <small>吉／忌為格局筆數</small></span><span><button id="prevHour" class="text-button">‹ 前時辰</button><button id="nextHour" class="text-button">後時辰 ›</button></span></div>
+  <div class="hours" id="hours" role="tablist" aria-label="十二時辰"></div>
+
+  <section id="chart" role="tabpanel" tabindex="-1" aria-label="所選時辰命盤">
+  <div class="summary" id="summary"></div>
+  <div class="hourhead" id="hourhead"></div>
+  <div class="section-line board-heading"><span>八卦奇門盤 <small>南上・北下・東左・西右</small></span><span class="board-size-controls" role="group" aria-label="盤面顯示大小"><button id="boardFit" class="text-button" aria-pressed="true">全盤</button><button id="boardRead" class="text-button" aria-pressed="false">原字級</button><button id="exportPdf" class="text-button pdf-button" type="button">輸出盤面圖PDF</button></span></div>
+  <p id="pdfStatus" class="pdf-status" role="status" aria-live="polite"></p>
+  <p class="ring-legend">外圈每格由上至下：地支・建除神／月將十二神／貴人十二神</p>
+  <p class="ring-info" id="ringInfo" role="status"></p>
+  <p class="board-hint" id="boardHint">「全盤」查看整體方位；「原字級」放大閱讀，可左右滑動。</p>
+  <div class="bagua-viewport" id="boardViewport" tabindex="0" role="region" aria-label="八卦及十二神盤，可左右捲動" aria-describedby="boardHint">
+    <div class="board-stage-wrap" id="boardStageWrap"><div class="board-stage" id="boardStage">
+      <svg id="deityRing" class="deity-ring" viewBox="0 0 900 900" role="list" aria-label="十二地支的建除神、月將神與貴人十二神"></svg>
+      <div class="grid bagua-board" id="grid"></div>
+    </div></div>
+  </div>
+  <div class="section-line pattern-heading"><span>本時格局 <small>點選可定位宮位</small></span><button id="clearFocus" class="text-button" hidden>清除定位</button></div>
+  <div class="tags" id="tags"></div>
+  <p id="palaceFocus" class="focus-note" role="status"></p>
+  </section>
+
+  <section class="scan">
+    <h2>掃吉格</h2>
+    <div class="row">
+      <label>從 <input type="date" id="s1" min="1931-01-01" max="2100-12-31"></label>
+      <label>到 <input type="date" id="s2" min="1931-01-01" max="2100-12-31"></label>
+      <label><input type="checkbox" id="incQing" checked> 青龍返首</label>
+      <label><input type="checkbox" id="incFei" checked> 飛鳥跌穴</label>
+      <label><input type="checkbox" id="incYu" checked> 玉女守門</label>
+      <label><input type="checkbox" id="incQi" checked> 乙丙奇得時遇甲</label>
+      <label><input type="checkbox" id="incAll"> 九遁三詐五假</label>
+      <button id="run" class="primary">掃描</button><button id="cancelScan" hidden>停止掃描</button>
+    </div>
+    <p class="scan-status" id="scanStatus" role="status"></p>
+    <div id="scanout"></div>
+  </section>
+
+  <p class="foot">
+    定局：置閏法（芒種／大雪超神滿十日置閏）。盤式：轉盤，中五寄坤二。日界：夜子時 23:00 起算次日，子時列於當日第一格。<br>
+    格局標記為第一版規則，青龍返首＝值符（帶當旬旬首儀）落宮地盤為丙、飛鳥跌穴＝天盤丙落地盤旬首儀之宮、玉女守門＝值使門落宮地盤丁、乙／丙奇得時遇甲＝乙加戊己／丙加庚辛；符伏吟、符反吟、門迫、六儀擊刑、入墓以「忌」標出供參，不自動抵銷吉格。<br>
+    節氣資料 1930–2100；排盤依置閏表可用範圍（1931–2100）。qimen-engine <span id="ver"></span>。
+  </p>
+</main>
+
+<script src="solar-lunar.js"></script>
+<script src="qimen-engine.js"></script>
+<script src="ring-rules.js"></script>
+<script src="taiyi-wufu.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="pdf-export.js"></script>
+<script src="interface.js"></script>
+</body>
+</html>

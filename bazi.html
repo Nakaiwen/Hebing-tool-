@@ -4878,5 +4878,72 @@ function downloadJson() {
   post({type:'ready'});
 })();
 </script>
+
+<script>
+/* ============================================================
+   時刻橋接（moment-bridge v1，2026-09-07）— 附加式，不修改上方任何原有邏輯
+   契約：父頁 postMessage {xl:'xl-merge-bridge', type:'moment', input:{y,m,d,h(0-11),lateZi}}
+         父頁 postMessage {xl:'xl-merge-bridge', type:'moment-scan', input:{from:{y,m,d}, to:{y,m,d}}}
+   回傳：{xl:'xl-merge-bridge', from:'bazi', type:'bazi-moment'|'bazi-moment-scan', ok, data|error}
+   前提：已先以 type:'run' 排好本命（currentChart）。
+   計分（v0.1 假設，非師承定案）：干喜 +10／忌 −10、支喜 +20／忌 −20、引動吉凶淨值 ×10。
+   ============================================================ */
+(function(){
+  var NS='xl-merge-bridge';
+  function post(msg){ try{ parent.postMessage(Object.assign({xl:NS,from:'bazi'},msg),'*'); }catch(e){} }
+  var W={stem:10,branch:20,rel:10};
+  function hit(ys,el){ if(!ys) return '平'; if((ys.favorable||[]).indexOf(el)>=0) return '喜'; if((ys.unfavorable||[]).indexOf(el)>=0) return '忌'; return '平'; }
+  function layer(chart,gz,label,origPos,withRel){
+    var E=BaziEngine, ys=chart.yongShen, ds=chart.pillars.dayPillar.charAt(0);
+    var st=gz.charAt(0), br=gz.charAt(1), se=E.getElementOf(st), be=E.getElementOf(br);
+    var sh=hit(ys,se), bh=hit(ys,be);
+    var score=(sh==='喜'?W.stem:sh==='忌'?-W.stem:0)+(bh==='喜'?W.branch:bh==='忌'?-W.branch:0);
+    var out={ layer:label, gz:gz, tenGod:E.getTenGod(ds,st), stemEl:se, branchEl:be, stemHit:sh, branchHit:bh, score:score };
+    if(withRel){
+      var a=E.analyzeActivation(ds,origPos,gz,label,ys);
+      out.verdict=a.verdict; out.relations=(a.relations||[]).map(function(r){return r.reason||r.kind;});
+      out.clashes=(a.clashes||[]).map(function(c){return c.categoryLabel+'·'+c.with;});
+      out.score+= (a.verdict.ji-a.verdict.xiong)*W.rel;
+    }
+    return out;
+  }
+  function origPosOf(chart){ var p=chart.pillars; return [
+    {role:'年',branch:p.yearPillar.charAt(1)},{role:'月',branch:p.monthPillar.charAt(1)},
+    {role:'日',branch:p.dayPillar.charAt(1)},{role:'時',branch:p.hourPillar.charAt(1)}]; }
+  function moment(chart,i){
+    var hourNum=i.lateZi?23:(i.h===0?0:i.h*2);
+    var fp=BaziEngine.calculateFourPillars(i.y,i.m,i.d,hourNum);
+    var op=origPosOf(chart);
+    var L={ year:layer(chart,fp.yearPillar,'流年',op,true), month:layer(chart,fp.monthPillar,'流月',op,true),
+            day:layer(chart,fp.dayPillar,'流日',op,true), hour:layer(chart,fp.hourPillar,'流時',op,true) };
+    return { schema:'xiaoliu.bazi-moment/v1', weights:W, dayMaster:chart.pillars.dayPillar.charAt(0),
+             favorable:(chart.yongShen.favorable||[]).slice(), unfavorable:(chart.yongShen.unfavorable||[]).slice(),
+             query:{y:i.y,m:i.m,d:i.d,h:i.h,lateZi:!!i.lateZi}, layers:L,
+             dayScore:L.year.score+L.month.score+L.day.score, hourScore:L.hour.score };
+  }
+  function scan(chart,i){
+    var op=origPosOf(chart), days=[];
+    var t0=Date.UTC(i.from.y,i.from.m-1,i.from.d), t1=Date.UTC(i.to.y,i.to.m-1,i.to.d);
+    for(var t=t0;t<=t1;t+=86400000){
+      var dt=new Date(t), y=dt.getUTCFullYear(), m=dt.getUTCMonth()+1, d=dt.getUTCDate();
+      var fp=BaziEngine.calculateFourPillars(y,m,d,12);
+      var ly=layer(chart,fp.yearPillar,'流年',op,true), lm=layer(chart,fp.monthPillar,'流月',op,true), ld=layer(chart,fp.dayPillar,'流日',op,true);
+      var hours=[];
+      for(var h=0;h<12;h++){ var hg=BaziEngine.calculateHourPillar(fp.dayPillar.charAt(0),h===0?0:h*2); var lh=layer(chart,hg,'流時',op,true); hours.push({h:h,gz:hg,score:lh.score,net:lh.verdict.net}); }
+      days.push({ y:y,m:m,d:d, dayGZ:fp.dayPillar, monthGZ:fp.monthPillar, yearGZ:fp.yearPillar, dayScore:ly.score+lm.score+ld.score, dayNet:ld.verdict.net, hours:hours });
+    }
+    return { schema:'xiaoliu.bazi-moment-scan/v1', weights:W, days:days };
+  }
+  window.addEventListener('message',function(ev){
+    var d=ev.data; if(!d||d.xl!==NS) return;
+    if(d.type!=='moment'&&d.type!=='moment-scan') return;
+    var rt=d.type==='moment'?'bazi-moment':'bazi-moment-scan';
+    try{
+      if(typeof currentChart==='undefined'||!currentChart) return post({type:rt,ok:false,error:'尚未排本命'});
+      post({type:rt,ok:true,data:d.type==='moment'?moment(currentChart,d.input):scan(currentChart,d.input)});
+    }catch(e){ post({type:rt,ok:false,error:String(e&&e.message||e)}); }
+  });
+})();
+</script>
 </body>
 </html>

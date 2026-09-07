@@ -178,6 +178,32 @@ iframe{width:100%; height:1400px; border:1px solid var(--line); border-radius:0 
 }
 </style>
 <link rel="stylesheet" href="research-ui.css">
+<style>
+/* 時盤合參 v0.1 */
+.mo-card h3{font-size:1rem; margin:22px 0 8px; color:var(--moss); letter-spacing:.1em;}
+.mo-ver{font-size:.7rem; color:var(--muted); letter-spacing:.05em; font-weight:400;}
+.mo-row{display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; margin:10px 0;}
+.mo-row label{font-size:.85rem; color:var(--moss); display:flex; gap:6px; align-items:center;}
+.mo-row input,.mo-row select{font-family:inherit; font-size:.9rem; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink);}
+.mo-lamps{display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin:14px 0 6px;}
+.mo-lamp{border:1px solid var(--line); border-radius:8px; padding:8px 6px; text-align:center; background:var(--card);}
+.mo-lamp.on{border-color:var(--wood); background:#eef4ea;}
+.mo-lamp.off{opacity:.75;}
+.mo-lamp .nm{font-size:.78rem; color:var(--moss); letter-spacing:.04em;}
+.mo-lamp .sc{font-size:1.25rem; font-weight:600; margin:2px 0;}
+.mo-lamp.on .sc{color:var(--wood);} .mo-lamp.off .sc{color:var(--muted);}
+.mo-lamp .gz{font-size:.75rem; color:var(--muted);}
+.mo-sum{font-size:1rem; margin:8px 0 12px; letter-spacing:.06em;}
+.mo-detail{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+.mo-box{border:1px solid var(--line); border-radius:8px; padding:10px 12px; background:var(--card); font-size:.85rem; line-height:1.7;}
+.mo-box h4{margin:0 0 6px; font-size:.9rem; color:var(--ink); letter-spacing:.08em;}
+.mo-box .mu{color:var(--muted);} .mo-box .ji{color:var(--wood);} .mo-box .xiong{color:var(--fire);}
+.mo-scan table{width:100%; border-collapse:collapse; font-size:.85rem;}
+.mo-scan th,.mo-scan td{border-bottom:1px solid var(--line); padding:5px 6px; text-align:left; white-space:nowrap;}
+.mo-scan th{color:var(--moss); font-weight:500;}
+.mo-scan td.n{font-weight:600; color:var(--wood);}
+@media(max-width:640px){ .mo-lamps{grid-template-columns:repeat(5,1fr); gap:4px;} .mo-lamp{padding:6px 2px;} .mo-lamp .sc{font-size:1rem;} .mo-detail{grid-template-columns:1fr;} .mo-scan{overflow-x:auto;} }
+</style>
 </head>
 <body>
 <h1>八字 × 紫微 × 太乙 合盤</h1>
@@ -231,6 +257,8 @@ iframe{width:100%; height:1400px; border:1px solid var(--line); border-radius:0 
     <button class="tab" data-pane="bazi">八字盤</button>
     <button class="tab" data-pane="ziwei">紫微盤</button>
     <button class="tab" data-pane="taiyi">太乙盤</button>
+    <button class="tab" data-pane="qimen">奇門盤</button>
+    <button class="tab" data-pane="moment">時盤合參</button>
   </div>
 
   <div class="pane active" id="pane-overlay">
@@ -313,6 +341,36 @@ iframe{width:100%; height:1400px; border:1px solid var(--line); border-radius:0 
   <div class="pane" id="pane-bazi"><iframe id="fr-bazi" src="bazi.html" title="八字排盤"></iframe></div>
   <div class="pane" id="pane-ziwei"><iframe id="fr-ziwei" src="ziwei.html" title="紫微排盤"></iframe></div>
   <div class="pane" id="pane-taiyi"><iframe id="fr-taiyi" src="taiyi/index.html" title="太乙人道命法排盤"></iframe></div>
+  <div class="pane" id="pane-qimen"><iframe id="fr-qimen" src="qimen/index.html" title="奇門遁甲排盤"></iframe></div>
+  <div class="pane" id="pane-moment">
+    <div class="overlay-card mo-card">
+      <h2>時盤合參 <span class="mo-ver">v0.1</span></h2>
+      <p class="note">同一個時辰，看四套系統各自亮不亮：八字流日／流時讀「氣」、紫微流日／流時讀「場」、奇門時局讀「局」。五盞燈的一致度只是交叉驗證的線索，不是吉凶宣判；請先在首頁排好本命。</p>
+      <div class="mo-row">
+        <label>日期 <input type="date" id="mo-date"></label>
+        <label>時辰 <select id="mo-hour">
+          <option value="0">子 23–01</option><option value="1">丑 01–03</option><option value="2">寅 03–05</option><option value="3">卯 05–07</option>
+          <option value="4">辰 07–09</option><option value="5">巳 09–11</option><option value="6">午 11–13</option><option value="7">未 13–15</option>
+          <option value="8">申 15–17</option><option value="9">酉 17–19</option><option value="10">戌 19–21</option><option value="11">亥 21–23</option>
+          <option value="lateZi">晚子 23–24</option></select></label>
+        <button class="btn-primary" id="mo-go">看這一刻</button>
+        <button class="btn-ghost" id="mo-now">現在</button>
+        <span class="status" id="mo-status"></span>
+      </div>
+      <div id="mo-lamps" class="mo-lamps"></div>
+      <div id="mo-detail" class="mo-detail"></div>
+      <h3>區間掃描</h3>
+      <div class="mo-row">
+        <label>起 <input type="date" id="mo-from"></label>
+        <label>迄 <input type="date" id="mo-to"></label>
+        <label>至少 <select id="mo-min"><option value="5">5 燈全亮</option><option value="4" selected>4 燈</option><option value="3">3 燈</option></select></label>
+        <button class="btn-primary" id="mo-scan">掃區間</button>
+        <span class="status" id="mo-scan-status"></span>
+      </div>
+      <div id="mo-scan-out" class="mo-scan"></div>
+      <p class="note">燈的門檻（v0.1 假設，待師承定案）：八字＝該層分數 &gt; 0（干喜 ±10、支喜 ±20、引動淨值 ×10）；紫微＝三方四正疊四化分數 &gt; 0 且非功課年標記；奇門＝局分 &gt; 0（青龍返首／飛鳥跌穴 +3、玉女守門 +2、三詐／九遁 +2、奇得時 +1；符伏吟／反吟 −2、值符或值使落宮帶門迫／擊刑／入墓各 −1）。掃描區間最長 93 天。奇門夜子時（23:00 起）依引擎慣例歸次日。</p>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -2319,5 +2377,8 @@ window.__hebingDiagnostics=Object.freeze({
 });
 })();
 </script>
+<script src="solar-lunar.js"></script>
+<script src="qimen/qimen-engine.js"></script>
+<script src="moment.js"></script>
 </body>
 </html>

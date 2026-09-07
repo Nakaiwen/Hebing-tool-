@@ -103,3 +103,18 @@ PNG／SVG 沿用目前可見曲線與時間範圍。PDF 保留原有五頁完整
 ## 空主星區留白
 
 移除「無主星」提示，沒有主星的區域留白。本次只需替換 ziwei.html。
+
+
+## 四盤合參：奇門接進 Hebing（2026-09-07，v0.1）
+
+新增檔案：`qimen/`（奇門遁甲工具整包，v0.3 引擎，含置閏表與 CLI）、`moment.js`（時盤合參父頁邏輯）、`test-moment.js`。
+修改檔案（皆為附加式，不動原有邏輯與契約）：
+- `index.html`：新增「奇門盤」分頁（iframe `qimen/index.html`）與「時盤合參」分頁；頁尾加載 `solar-lunar.js`、`qimen/qimen-engine.js`、`moment.js`。
+- `bazi.html`：追加 moment-bridge v1（`type:'moment'`／`'moment-scan'` → `bazi-moment`／`bazi-moment-scan`），流年／流月／流日／流時四柱由 `calculateFourPillars` 取得，引動走原 `analyzeActivation`。
+- `ziwei.html`：追加 moment-bridge v1（同名訊息 → `ziwei-moment`／`ziwei-moment-scan`），七層四化疊加走原 `stackCount()`，流時命宮＝流日命宮順數時辰、流時四化取時柱干（與流時盤同一程式路徑）。
+
+時盤合參：輸入日期＋時辰，五盞燈——八字流日、八字流時、紫微流日、紫微流時、奇門時局——算一致度 N/5；區間掃描（≤93 天）列出達門檻的時辰與亮燈分布。
+
+**v0.1 假設（待 Nakai 依實證定案）**：八字時刻分＝干喜 ±10、支喜 ±20、引動淨值 ×10；紫微燈＝分數>0 且非疊忌；奇門局分＝青龍返首／飛鳥跌穴 +3、玉女守門 +2、三詐／九遁 +2、奇得時 +1、五假 0；符伏吟／反吟 −2；值符或值使落宮帶門迫／擊刑／入墓各 −1。奇門夜子時依引擎慣例歸次日；紫微子時沿用本工具 00:00 日界（兩者日界不同，屬已知差異，已在 UI 註明）。博弈濾網不寫入本層，仍由 nakai-piancai-timing 技能疊加。
+
+驗證：`node test-moment.js` 通過（Nakai 命例 2026-12-04 申時、12 月整月掃描、晚子時歸次日、超長區間攔截）；`test-parent.js`、`test-research-ui.js` 回歸通過。太乙時層（五福）未接，列為 v0.2。未做真瀏覽器視覺測試。

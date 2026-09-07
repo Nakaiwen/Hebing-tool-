@@ -1,0 +1,144 @@
+
+  :root{
+    --paper:#f7f1e4; --ink:#283a2f; --moss:#516b55; --gold:#b99b62;
+    --muted:#8a8071; --line:#e3d9c3; --card:#fffdf6;
+    --wood:#3f7d36; --fire:#b3402f; --earth:#7d5a44; --metal:#c2683f; --water:#365f78;
+    --qing:#2f7d6d;   /* 青龍返首 */
+    font-family:"BiauKaiWeb","cwTeXKai","Noto Serif TC","Kaiti TC",serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);line-height:1.55;font-size:15px}
+  main{max-width:720px;margin:0 auto;padding:18px 14px 56px}
+  h1{font-size:1.3rem;font-weight:600;margin:6px 0 14px;text-align:center;letter-spacing:.3em}
+  h1 small{display:block;font-size:.8rem;font-weight:400;color:var(--muted);letter-spacing:.2em;margin-top:2px}
+  .datebar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .datebar button,.scan button{background:transparent;border:1px solid var(--line);color:var(--moss);border-radius:8px;padding:6px 12px;font:inherit;cursor:pointer;letter-spacing:.1em}
+  .datebar button:hover,.scan button:hover{border-color:var(--gold);color:var(--ink)}
+  input[type=date]{background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px 10px;font:inherit;flex:1;min-width:0}
+  .dayline{font-size:17px;margin:4px 0 14px;letter-spacing:.05em}
+  .dayline small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px;letter-spacing:0}
+  .dayline .ju{color:var(--gold)}
+
+  /* 十二時辰帶 */
+  .hours{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-bottom:16px}
+  .hour{position:relative;border:1px solid var(--line);border-radius:6px;padding:8px 0 6px;text-align:center;cursor:pointer;background:var(--card)}
+  .hour .z{font-size:16px;display:block}
+  .hour .g{font-size:11px;color:var(--muted);display:block}
+  .hour .mk{position:absolute;top:2px;right:3px;font-size:10px;line-height:1}
+  .hour.qing{border-color:var(--qing);box-shadow:0 0 0 1px var(--qing) inset,0 0 12px rgba(47,125,109,.25)}
+  .hour.qing .z{color:var(--qing)}
+  .hour.fei{border-color:var(--gold)}
+  .hour.fei .z{color:var(--gold)}
+  .hour.sel{background:var(--ink);color:var(--paper)}
+  .hour.sel .z,.hour.sel .g{color:var(--paper)}
+  .hour:focus-visible{outline:2px solid var(--moss);outline-offset:2px}
+
+  .hourhead{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13.5px;color:var(--muted);margin-bottom:10px}
+  .hourhead b{color:var(--ink);font-weight:500}
+
+  /* 九宮 */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+  .pal{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 10px 8px;min-height:118px;position:relative}
+  .pal .nm{font-size:11.5px;color:var(--muted);display:flex;justify-content:space-between;gap:4px}
+  .pal .gan{font-size:26px;letter-spacing:.14em;margin:2px 0 4px;line-height:1.15}
+  .pal .gan .t{color:var(--ink)}
+  .pal .gan .d{color:var(--muted)}
+  .pal .gan .t2{font-size:15px;color:var(--muted);vertical-align:top}
+  .pal .rows{font-size:13.5px;line-height:1.5}
+  .pal.center .gan,.pal.center .rows{color:var(--muted)}
+  .pal.center .rows{font-size:12.5px}
+  .pal.hit-qing{border-color:var(--qing);background:linear-gradient(180deg,rgba(47,125,109,.10),var(--card))}
+  .pal.hit-fei{border-color:var(--gold)}
+  .pal .kong{font-size:11px;color:var(--fire);text-align:right}
+
+  /* 五行 */
+  .e-木{color:var(--wood)} .e-火{color:var(--fire)} .e-土{color:var(--earth)} .e-金{color:var(--metal)} .e-水{color:var(--water)}
+
+  .tags{margin:10px 0 0;display:flex;flex-wrap:wrap;gap:6px}
+  .tag{font-size:12.5px;border-radius:999px;padding:2px 10px;border:1px solid var(--line);color:var(--muted);background:var(--card)}
+  .tag.qing{border-color:var(--qing);color:var(--qing)}
+  .tag.jin{border-color:var(--gold);color:#8a6a2a}
+  .tag.zhu{border-color:var(--fire);color:var(--fire)}
+
+  /* 掃描 */
+  .scan{margin-top:34px;border-top:1px solid var(--line);padding-top:18px}
+  .scan h2{font-size:1rem;font-weight:500;color:var(--moss);margin:0 0 10px;letter-spacing:.2em}
+  .scan .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .scan label{font-size:13px;color:var(--moss);display:flex;align-items:center;gap:6px}
+  .scan table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13.5px}
+  .scan td{padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+  .scan td.q{color:var(--qing)}
+  .scan td.c{color:var(--fire);font-size:12px}
+  .scan .empty{color:var(--muted);font-size:13px;margin-top:10px}
+  .foot{margin-top:28px;font-size:12px;color:var(--muted);line-height:1.7}
+  @media (max-width:420px){ .hour .z{font-size:14px} .pal .gan{font-size:22px} .pal{min-height:110px;padding:8px} }
+/* 私用介面 v1：保留 720px 資料寬度與原色系 */
+body{font-size:16px}button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:default;opacity:.45}button:focus-visible,input:focus-visible{outline:2px solid var(--qing);outline-offset:3px}[hidden]{display:none!important}
+.datebar{gap:6px;flex-wrap:wrap}.datebar input{min-width:135px}.datebar button{letter-spacing:0;padding:7px 10px;min-height:40px}.datebar .primary,.scan .primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}.datebar .primary:hover,.scan .primary:hover{background:var(--moss);color:var(--paper);border-color:var(--moss)}
+.date-status{font-size:12px;color:var(--moss);min-height:19px;margin-bottom:6px}.date-status.error{color:var(--fire)}.dayline small{color:#716b5e}.section-line{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:14px;margin:12px 0 8px}.section-line small{font-size:12px;color:#716b5e}.text-button{border:0;background:transparent;color:var(--moss);padding:6px;font-size:13px;border-radius:5px}.text-button:hover{background:var(--line)}
+.hours{gap:4px;margin-bottom:14px;grid-template-columns:repeat(12,minmax(0,1fr))}.hour{font:inherit;color:var(--ink);padding:7px 1px;min-width:0}.hour .z{font-size:15px;white-space:nowrap}.hour .g{font-size:12px;color:#716b5e;white-space:nowrap;letter-spacing:-.5px}.hour .counts{display:block;font-size:12px;margin-top:5px;white-space:nowrap}.hour .good{color:var(--qing)}.hour .bad{color:var(--fire)}.hour .counts i{font-style:normal;color:#716b5e}.hour .current{display:block;font-size:12px;line-height:1.3;min-height:16px;color:var(--qing)}.hour.qing{box-shadow:inset 0 2px 0 var(--qing)}.hour.sel .z,.hour.sel .g,.hour.sel .counts *,.hour.sel .current{color:var(--paper)}.hour.sel .counts{color:var(--paper)}
+.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:12px}.metric{background:rgba(255,253,246,.72);border:1px solid var(--line);border-radius:8px;padding:8px 10px}.metric span{display:block;font-size:12px;color:#716b5e}.metric strong{font-size:23px;font-weight:500;line-height:1.4}.metric.good strong{color:var(--qing)}.metric.bad strong{color:var(--fire)}.metric small{font-size:12px;margin-left:3px;color:#716b5e}.metric .word{font-size:18px}.hourhead{color:#716b5e;font-size:14px}.hourhead .selected-time{flex-basis:100%;font-size:16px;color:var(--ink)}.hourhead .period{display:block;font-size:12px;color:#716b5e}
+.grid{gap:6px}.pal{min-width:0;padding:10px;min-height:172px}.pal .nm{font-size:13px;color:#716b5e;flex-wrap:wrap}.pal .kong{font-size:12px}.pal .gan{display:flex;gap:12px;align-items:baseline;margin:9px 0;letter-spacing:0}.gan .stem{display:flex;align-items:baseline;gap:4px}.gan small{font-size:12px;color:#716b5e}.gan .t2{margin-left:2px}.pal .rows{font-size:15px;line-height:1.65}.rows .datum{display:flex;align-items:baseline;gap:8px}.datum small{font-size:12px;color:#716b5e}.pal .pal-count{font-size:12px;color:var(--qing);margin-top:6px}.pal.center{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}.pal.center .rows{font-size:13px}.pal.focused{outline:3px solid var(--qing);outline-offset:-3px;background:#e4eee2}.pattern-heading{margin-top:18px}.tag{font:inherit;font-size:13px;text-align:left;white-space:normal;border-radius:6px;padding:5px 8px}.tag[aria-pressed=true]{box-shadow:0 0 0 2px currentColor}.focus-note{font-size:13px;color:var(--moss);margin:8px 0;min-height:20px}.tags{gap:6px;margin-top:0}
+.scan{margin-top:24px}.scan h2{font-size:17px}.scan label{font-size:14px}.scan .row{gap:10px 14px}.scan input[type=checkbox]{accent-color:var(--qing);width:16px;height:16px}.scan-status{font-size:13px;color:var(--moss);margin:10px 0}.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}.scan table{margin:0;font-size:14px}.scan th{text-align:left;padding:9px 7px;font-size:12px;color:#716b5e;background:#eee7d7;font-weight:500}.scan td{padding:9px 7px}.scan tr.result-row:hover,.scan tr.result-row.active{background:#e7eee0}.scan tr.result-row{cursor:pointer}.scan .open-chart{border:0;padding:0;text-align:left;font-size:13px;color:var(--ink);letter-spacing:0;white-space:nowrap}.scan td small{display:block;font-size:12px;color:#716b5e}.scan td.c{font-size:12px}.scan .result-tag{display:block;margin-bottom:3px}.scan .result-hint{font-size:12px;color:#716b5e}.scan .more{margin-top:10px}.foot{font-size:12px}.foot:before{content:'';display:block;width:36px;border-top:2px solid var(--gold);margin-bottom:12px}
+@media(max-width:600px){.hours{grid-template-columns:repeat(6,minmax(0,1fr))}.hour .z{font-size:16px}.hour .g{letter-spacing:0}.hour{padding:6px 2px}.hour .counts{margin-top:2px}.scan table{min-width:570px}}
+@media(max-width:420px){.pal{padding:8px 6px;min-height:166px}.pal .gan{gap:7px;font-size:24px}.gan .stem{gap:2px}.pal .rows{font-size:14px}.rows .datum{gap:5px}.metric{padding:7px}.metric strong{font-size:21px}.metric .word{font-size:16px}.summary{gap:4px}.dayline{font-size:16px}}
+@media(prefers-reduced-motion:no-preference){.hour,.tag,.pal{transition:background-color .15s,border-color .15s}}
+.pal .gan{flex-wrap:wrap;row-gap:3px}
+
+/* 八卦盤：八個梯形宮環繞中五，文字維持正向。 */
+.board-heading{margin-top:18px}.board-hint{display:none;font-size:13px;color:var(--moss);margin:0 0 8px}
+.bagua-viewport{overflow-x:auto;overscroll-behavior-x:contain;padding:4px 0 10px;scrollbar-color:var(--gold) var(--paper);scrollbar-width:thin}
+.bagua-board{position:relative;display:block;min-width:680px;width:100%;aspect-ratio:1;isolation:isolate}
+.bagua-board .pal{position:absolute;inset:0;display:block;min-height:0;padding:0;border:0;border-radius:0;background:none;outline:none;pointer-events:none}
+.pal-shape{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.pal-shape polygon{fill:var(--card);stroke:none}
+.bagua-board .center .pal-shape polygon{fill:#eee7d6}
+.bagua-board .hit-fei .pal-shape polygon{fill:#faf2dd}
+.bagua-board .hit-qing .pal-shape polygon{fill:#e5f0e6}
+.bagua-board .pal.focused{z-index:1}
+.bagua-board .pal.focused .pal-shape polygon{fill:#d4e6d4}
+.bagua-board .pal-content{position:absolute;transform:translate(-50%,-50%);width:112px;text-align:center;pointer-events:auto}
+.bagua-board .center .pal-content{width:158px}
+.bagua-board .nm{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;font-size:14px;line-height:19px;color:var(--ink);white-space:nowrap}
+.bagua-board .trigram{font-family:serif;font-size:18px;vertical-align:-1px;color:var(--moss)}
+.bagua-board .direction{font-size:12px;color:#716b5e}
+.bagua-board .kong{font-size:12px;line-height:16px;min-height:16px;text-align:center;letter-spacing:2px}
+.bagua-board .gan{justify-content:center;align-items:baseline;flex-wrap:nowrap;gap:8px;margin:4px 0;font-size:24px;line-height:28px}
+.bagua-board .gan .stem{gap:2px}.bagua-board .gan .t2{font-size:14px;margin-left:0}
+.bagua-board .rows{font-size:15px;line-height:21px}.bagua-board .datum{justify-content:center;gap:7px}
+.bagua-board .pal-count{font-size:12px;line-height:18px;margin-top:3px}
+.bagua-board .center .nm{font-size:16px;letter-spacing:.12em}.bagua-board .center .gan{margin:12px 0;font-size:32px;line-height:36px}
+.bagua-board .center .rows{font-size:14px;line-height:24px}
+@media(max-width:707px){.board-hint{display:block}}
+@media(prefers-reduced-motion:no-preference){.pal-shape polygon{transition:fill .15s}}
+.bagua-board .pal-content{width:108px}.bagua-board .gan{margin:3px 0}.bagua-board .pal-count{margin-top:1px}
+
+/* 十二神圓環。原字級時保留原八卦盤的 680px 內盤。 */
+.board-size-controls{display:inline-flex;gap:4px}.board-size-controls button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+.ring-legend{font-size:13px;color:var(--moss);margin:0 0 5px}.ring-info{font-size:13px;line-height:1.6;color:var(--ink);margin:0 0 6px}
+.board-hint{display:block;font-size:12px;color:#716b5e}
+.board-stage-wrap{position:relative;width:900px;height:900px;margin:0 auto}
+.board-stage{position:relative;width:900px;height:900px;transform-origin:top left}
+.board-stage .bagua-board{position:absolute;left:110px;top:110px;width:680px;min-width:680px;height:680px;aspect-ratio:1}
+.deity-ring{position:absolute;inset:0;width:900px;height:900px;overflow:visible;font-family:inherit}
+.deity-sector path{fill:#f5eddc;stroke:var(--gold);stroke-width:1.2;stroke-linejoin:round}
+.deity-sector:nth-child(even) path{fill:var(--card)}
+.deity-sector text{fill:var(--ink);font-family:inherit;font-size:17px}
+.deity-sector .ring-general{font-size:16px;fill:var(--moss)}
+.deity-sector.is-selected path{fill:var(--ink);stroke:var(--ink)}
+.deity-sector.is-selected text{fill:var(--paper)}
+
+/* 八卦邊線統一繪製一次，避免相鄰宮位重疊描邊造成深淺差異。 */
+.bagua-lines{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;overflow:visible}
+.bagua-lines path{fill:none;stroke:var(--line);stroke-width:1.4px;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}
+
+.deity-sector .ring-guiren{font-size:16px;fill:var(--earth)}
+
+/* 時五福只以文字徽記定位，維持八卦邊線與原有格局底色。 */
+.wufu-badge{display:inline-block;padding:3px 8px;border-radius:5px;background:#8a5d21;color:#fffaf0;font-size:18px;font-weight:700;line-height:22px;vertical-align:baseline;white-space:nowrap}
+.bagua-board .has-wufu .pal-count{display:flex;justify-content:center;align-items:center;gap:5px;line-height:normal}
+.wufu-good{margin-left:0;font-size:12px;color:var(--qing);white-space:nowrap}
+.hourhead .wufu-info{color:#705324;font-size:16px}.wufu-info b{font-size:18px}.wufu-info small{font-size:12px;color:#716b5e}
+
+.board-size-controls{flex-wrap:wrap}.board-size-controls .pdf-button{background:var(--moss);color:var(--paper);padding:7px 12px}.board-size-controls .pdf-button:hover{background:var(--ink)}
+.pdf-status{font-size:13px;color:var(--moss);margin:4px 0}.pdf-status:empty{display:none}

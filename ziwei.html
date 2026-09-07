@@ -2513,5 +2513,68 @@ enhanceAllSelects(); // 把原生 <select> 換成自製下拉（Artifact 沙箱�
 })();
 </script>
 
+
+<script>
+/* ============================================================
+   時刻橋接（moment-bridge v1，2026-09-07）— 附加式，不修改上方任何原有邏輯
+   契約：父頁 postMessage {xl:'xl-merge-bridge', type:'moment', input:{y,m,d,h(0-11),lateZi}}
+         父頁 postMessage {xl:'xl-merge-bridge', type:'moment-scan', input:{from:{y,m,d}, to:{y,m,d}}}
+   回傳：{xl:'xl-merge-bridge', from:'ziwei', type:'ziwei-moment'|'ziwei-moment-scan', ok, data|error}
+   前提：已先以 type:'run' 排好本命（CHART）。
+   計分走原始 stackCount()（生年＋大限＋小限＋流年＋流月＋流日＋流時 疊四化，三方四正），零重製。
+   流時命宮＝流日命宮順數時辰；流時四化取時柱天干（五鼠遁）。子時日界沿用本工具 00:00 慣例。
+   ============================================================ */
+(function(){
+  var NS='xl-merge-bridge';
+  function post(msg){ try{ parent.postMessage(Object.assign({xl:NS,from:'ziwei'},msg),'*'); }catch(e){} }
+  var frame=function(b){ return [b,(b+6)%12,(b+4)%12,(b+8)%12]; };
+  function pack(zhi,r,gz){ return { zhi:E.ZHI[zhi], palace:CHART.palaces[zhi].palaceName, gz:gz||null, score:r.score, label:r.label, jiTotal:r.jiTotal,
+    triggers:(r.triggers||[]).map(function(t){ return t.name+'@'+t.natal+'（祿'+t.lu+' 權'+t.quan+' 科'+t.ke+' 忌'+t.ji+'）'; }) }; }
+  function dayCore(y,m,d){
+    var lun=E.solarToLunar(y,m,d), lY=lun.lYear, age=lY-CHART.lunarBirthYear+1;
+    var da=CHART.daList.find(function(x){return age>=x.start&&age<=x.end;});
+    var L=E.liuNian(lY), dou=douJun(L.zhi);
+    var yueZhi=((dou+(lun.lMonth-1))%12+12)%12, riZhi=((yueZhi+(lun.lDay-1))%12+12)%12;
+    var P=solarPillars(y,m,d);
+    var xiaoHua=age>0?E.siHuaByGan(CHART.zhiGanIndex[xiaoZhiOf(age)]):{};
+    var base=[CHART.huaMap, da?da.hua:{}, xiaoHua, L.hua];
+    var lm=base.concat([E.siHuaByGan(P.monthGan)]), ld=lm.concat([E.siHuaByGan(P.dayGan)]);
+    return { lun:lun, age:age, da:da, L:L, yueZhi:yueZhi, riZhi:riZhi, P:P, layersY:base, layersM:lm, layersD:ld };
+  }
+  function hourOf(c,h){
+    var shiZhi=((c.riZhi+h)%12+12)%12, shiGan=hourGanIndex(c.P.dayGan,h);
+    var r=stackCount(frame(shiZhi), c.layersD.concat([E.siHuaByGan(shiGan)]));
+    return { zhi:shiZhi, gz:E.GAN[shiGan]+E.ZHI[h], r:r };
+  }
+  function moment(i){
+    var c=dayCore(i.y,i.m,i.d), h=i.h;
+    var rY=stackCount(frame(c.L.mingZhi), c.layersY), rM=stackCount(frame(c.yueZhi), c.layersM), rD=stackCount(frame(c.riZhi), c.layersD), H=hourOf(c,h);
+    return { schema:'xiaoliu.ziwei-moment/v1', query:{y:i.y,m:i.m,d:i.d,h:h,lateZi:!!i.lateZi},
+      lunar:{ year:c.lun.lYear, month:c.lun.lMonth, day:c.lun.lDay, isLeap:!!c.lun.isLeap }, virtualAge:c.age,
+      daen:c.da?{ganZhi:c.da.ganZhi,palaceName:c.da.palaceName,start:c.da.start,end:c.da.end}:null,
+      layers:{ year:pack(c.L.mingZhi,rY,c.L.ganZhi), month:pack(c.yueZhi,rM,c.P.monthGZ), day:pack(c.riZhi,rD,c.P.dayGZ), hour:pack(H.zhi,H.r,H.gz) },
+      dayScore:rD.score, hourScore:H.r.score };
+  }
+  function scan(i){
+    var days=[], t0=Date.UTC(i.from.y,i.from.m-1,i.from.d), t1=Date.UTC(i.to.y,i.to.m-1,i.to.d);
+    for(var t=t0;t<=t1;t+=86400000){
+      var dt=new Date(t), y=dt.getUTCFullYear(), m=dt.getUTCMonth()+1, d=dt.getUTCDate();
+      var c=dayCore(y,m,d), rD=stackCount(frame(c.riZhi), c.layersD), hours=[];
+      for(var h=0;h<12;h++){ var H=hourOf(c,h); hours.push({h:h,gz:H.gz,zhi:E.ZHI[H.zhi],palace:CHART.palaces[H.zhi].palaceName,score:H.r.score,label:H.r.label}); }
+      days.push({ y:y,m:m,d:d, dayGZ:c.P.dayGZ, dayZhi:E.ZHI[c.riZhi], dayPalace:CHART.palaces[c.riZhi].palaceName, dayScore:rD.score, dayLabel:rD.label, hours:hours });
+    }
+    return { schema:'xiaoliu.ziwei-moment-scan/v1', days:days };
+  }
+  window.addEventListener('message',function(ev){
+    var d=ev.data; if(!d||d.xl!==NS) return;
+    if(d.type!=='moment'&&d.type!=='moment-scan') return;
+    var rt=d.type==='moment'?'ziwei-moment':'ziwei-moment-scan';
+    try{
+      if(typeof CHART==='undefined'||!CHART) return post({type:rt,ok:false,error:'尚未排本命'});
+      post({type:rt,ok:true,data:d.type==='moment'?moment(d.input):scan(d.input)});
+    }catch(e){ post({type:rt,ok:false,error:String(e&&e.message||e)}); }
+  });
+})();
+</script>
 </body>
 </html>
