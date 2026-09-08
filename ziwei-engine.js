@@ -29,6 +29,15 @@
     '巳(09-11)', '午(11-13)', '未(13-15)', '申(15-17)', '酉(17-19)', '戌(19-21)', '亥(21-23)'];
   const PALACE_NAMES = ['命宮', '兄弟', '夫妻', '子女', '財帛', '疾厄',
     '遷移', '交友', '官祿', '田宅', '福德', '父母'];
+  // --- 五行表（v0.9.30 五行主線用）---
+  // 主星五行取「主／次」兩欄；Nakai 2026-09-08 裁定：廉貞木火、貪狼水木、巨門水、七殺金。
+  // 主五行暫依通行：廉貞火（次木）、貪狼木（次水）——若主次要對調，只改此表。
+  const ZHI_ELEMENT = { 子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火', 午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水' };
+  const GAN_ELEMENT = { 甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水' };
+  const STAR_ELEMENT = {
+    紫微: ['土'], 天機: ['木'], 太陽: ['火'], 武曲: ['金'], 天同: ['水'], 廉貞: ['火', '木'], 天府: ['土'],
+    太陰: ['水'], 貪狼: ['木', '水'], 巨門: ['水'], 天相: ['水'], 天梁: ['土'], 七殺: ['金'], 破軍: ['水']
+  };
 
   const NOTES = []; // 收集本次排盤採用的流派說明，回傳給 UI 顯示
 
@@ -404,7 +413,7 @@
     // --- 組裝 12 宮資料 ---
     const palaces = []; // 以地支索引 0..11 為 key 的陣列
     for (let z = 0; z < 12; z++) palaces[z] = {
-      zhiIndex: z, zhi: ZHI[z], gan: GAN[zhiGan[z]], ganIndex: zhiGan[z], ganZhi: GAN[zhiGan[z]] + ZHI[z],
+      zhiIndex: z, zhi: ZHI[z], zhiElement: ZHI_ELEMENT[ZHI[z]], gan: GAN[zhiGan[z]], ganIndex: zhiGan[z], ganZhi: GAN[zhiGan[z]] + ZHI[z],
       stars: [], palaceName: '', isMing: false, isShen: false,
       daXian: daXian[z] || null
     };
@@ -422,7 +431,7 @@
     for (let z = 0; z < 12; z++) {
       if (!daXian[z]) continue;
       daList.push({
-        zhiIndex: z, zhi: ZHI[z], ganIndex: zhiGan[z], gan: GAN[zhiGan[z]],
+        zhiIndex: z, zhi: ZHI[z], zhiElement: ZHI_ELEMENT[ZHI[z]], ganIndex: zhiGan[z], gan: GAN[zhiGan[z]],
         ganZhi: GAN[zhiGan[z]] + ZHI[z], palaceName: palaces[z].palaceName,
         start: daXian[z].start, end: daXian[z].end,
         hua: siHuaByGan(zhiGan[z]), huaText: huaTextOf(zhiGan[z])
@@ -438,10 +447,33 @@
       palaces[s.zhi].stars.push({
         name: name, type: s.type,
         brightness: s.type === '主' ? brightnessOf(name, s.zhi) : '',
-        hua: huaMap[name] || ''
+        hua: huaMap[name] || '',
+        element: (STAR_ELEMENT[name] || [])[0] || '',
+        element2: (STAR_ELEMENT[name] || [])[1] || ''
       });
     });
     palaces.forEach(p => p.stars.sort((a, b) => (ORDER[a.type] - ORDER[b.type])));
+
+    // --- 大限宮位主星與三方四正（v0.9.30 五行主線用；派星完成後補入 daList）---
+    function mainStarsOf(z, daHua) {
+      return palaces[z].stars.filter(s => s.type === '主').map(s => ({
+        name: s.name, element: s.element, element2: s.element2, brightness: s.brightness,
+        natalHua: s.hua, daHua: (daHua && daHua[s.name]) || ''
+      }));
+    }
+    daList.forEach(d => {
+      const z = d.zhiIndex;
+      d.stars = mainStarsOf(z, d.hua);
+      d.starsBorrowed = false;
+      if (!d.stars.length) { // 空宮借對宮主星（標 borrowed，判讀時可辨）
+        d.stars = mainStarsOf((z + 6) % 12, d.hua).map(s => Object.assign(s, { borrowed: true }));
+        d.starsBorrowed = true;
+      }
+      d.frame = [z, (z + 6) % 12, (z + 4) % 12, (z + 8) % 12].map(i => ZHI[i]);
+      d.frameStars = [(z + 6) % 12, (z + 4) % 12, (z + 8) % 12].map(i => ({
+        zhi: ZHI[i], zhiElement: ZHI_ELEMENT[ZHI[i]], palaceName: palaces[i].palaceName, stars: mainStarsOf(i, d.hua)
+      }));
+    });
 
     return {
       input: o,
@@ -476,6 +508,7 @@
     computeChart: computeChart,
     solarToLunar: solarToLunar, lunarToSolar: lunarToSolar, lunarMonthLen: lunarMonthLen, leapMonthOf: leapMonthOf,
     siHuaByGan: siHuaByGan, huaTextOf: huaTextOf, liuNian: liuNian,
-    GAN: GAN, ZHI: ZHI, ZODIAC: ZODIAC, HOUR_LABEL: HOUR_LABEL, PALACE_NAMES: PALACE_NAMES
+    GAN: GAN, ZHI: ZHI, ZODIAC: ZODIAC, HOUR_LABEL: HOUR_LABEL, PALACE_NAMES: PALACE_NAMES,
+    ZHI_ELEMENT: ZHI_ELEMENT, GAN_ELEMENT: GAN_ELEMENT, STAR_ELEMENT: STAR_ELEMENT
   };
 }));

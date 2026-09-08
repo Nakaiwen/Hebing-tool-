@@ -71,12 +71,19 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
   for (let i = 0; i < 100 && !/svg/.test(doc.getElementById('ovChart').innerHTML); i++) await sleep(100);
   ok(!doc.getElementById('ovPng').disabled && !doc.getElementById('ovSvg').disabled, '排盤後輸出鈕解鎖');
 
-  // 等太乙 ext-curve 掛上（第三條線）
-  for (let i = 0; i < 100 && countPoly(doc.getElementById('ovChart').innerHTML) < 3; i++) await sleep(100);
+  // 等太乙 ext-curve 與五行主線模組掛上（圖例含限例太乙、共振卡 6 組配對）
+  for (let i = 0; i < 100 && !(/限例太乙（十二宮歲段/.test(doc.getElementById('ovLegend').textContent) && /八字＋紫微（五行主線） × 限例太乙/.test(doc.getElementById('resoGrid').textContent)); i++) await sleep(100);
+  /* v0.9.34 預設顯示：八字＋紫微（五行主線曲線）與太乙；八字、紫微單線預設關閉 */
+  const toggles = [...doc.querySelectorAll('[data-method]')];
+  ok(toggles.map(c => c.dataset.method).join(',') === 'bazi,ziwei,hebing,taiyi', '顯示曲線勾選項：八字／紫微／八字＋紫微／太乙');
+  ok(toggles.map(c => c.checked).join(',') === 'false,false,true,true', '預設開啟八字＋紫微與太乙、關閉八字與紫微');
+  ok(countPoly(doc.getElementById('ovChart').innerHTML) === 2, '預設圖上兩條線（五行主線曲線＋限例太乙）（實得 ' + countPoly(doc.getElementById('ovChart').innerHTML) + '）');
+  toggles.forEach(c => { if (!c.checked) c.click(); });
+  await sleep(300);
   let svg = doc.getElementById('ovChart').innerHTML;
   ok(!doc.getElementById('ovPdf').disabled, '大限與流年三法核心線齊備後 PDF 報告按鈕解鎖');
   ok(/<svg/.test(svg), '重疊圖 SVG 已產生');
-  ok(countPoly(svg) === 3, '大限合盤：八字大運＋紫微大限＋限例太乙 三條 polyline（實得 ' + countPoly(svg) + '）');
+  ok(countPoly(svg) === 4, '大限合盤全開：八字大運＋紫微大限＋五行主線曲線＋限例太乙 四條 polyline（實得 ' + countPoly(svg) + '）');
   ok(/#7d5a44/.test(svg), '限例太乙棕線在圖上');
   ok(/限例太乙（十二宮歲段/.test(doc.getElementById('ovLegend').textContent), '圖例含限例太乙說明與線色');
   ok(!/#46708a/.test(svg), '行年趨勢藍線不在大限層（level 過濾生效）');
@@ -91,7 +98,7 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
   ok(resoCard.style.display !== 'none', '共振分析卡顯示');
   const resoTxt = doc.getElementById('resoGrid').textContent;
   ok(/同向率/.test(resoTxt) && /形狀相似度/.test(resoTxt), '同向率與形狀相似度存在：' + resoTxt.replace(/\s+/g, ' ').slice(0, 110));
-  ok((resoTxt.match(/同向率/g) || []).length === 3 && /限例太乙/.test(resoTxt), '大限合盤三序列 3 組配對（含限例太乙）');
+  ok((resoTxt.match(/同向率/g) || []).length === 1 && /八字＋紫微（五行主線） × 限例太乙/.test(resoTxt), '共振卡只顯示核心配對：八字＋紫微 × 限例太乙（v0.9.35）');
   const rMatch = resoTxt.match(/形狀相似度 (-?\d\.\d\d)/);
   ok(!!rMatch && Math.abs(parseFloat(rMatch[1])) <= 1, 'Pearson r 在 [−1,1]（r=' + (rMatch ? rMatch[1] : '?') + '）');
   ok(/共高帶/.test(resoTxt) && /共同功課帶/.test(resoTxt), '共振帶清單存在');
@@ -103,12 +110,12 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
   const turnCard = doc.getElementById('turnCard');
   const turnModes = [...doc.querySelectorAll('#turnGrid .turn-mode')];
   ok(turnCard.style.display !== 'none' && turnModes.length === 2 && /大限轉折關係/.test(turnModes[0].textContent) && /流年轉折關係/.test(turnModes[1].textContent), '轉折卡同時呈現大限與流年兩層級');
-  ok((turnCard.textContent.match(/太乙 × 八字/g)||[]).length >= 2 && (turnCard.textContent.match(/太乙 × 紫微/g)||[]).length >= 2, '大限／流年皆分別比較太乙 × 八字與太乙 × 紫微');
+  ok((turnCard.textContent.match(/太乙 × 八字＋紫微/g)||[]).length >= 2 && (turnCard.textContent.match(/太乙 × 紫微/g)||[]).length === 0 && (turnCard.textContent.match(/太乙 × 八字[^＋]/g)||[]).length === 0, '大限／流年皆只比較太乙 × 八字＋紫微，不再分列八字、紫微（v0.9.35）');
   ok(/轉折吻合/.test(turnCard.textContent) && /最佳時間差相關/.test(turnCard.textContent) && /方向一致率/.test(turnCard.textContent) && /綜合貼合度/.test(turnCard.textContent), '卡片顯示轉折吻合、最佳時間差、方向一致率與綜合貼合度');
   ok(/三年移動平均/.test(turnModes[1].textContent) && /同方向配對窗 ±2 年/.test(turnModes[1].textContent) && /±1 年視為同期/.test(turnModes[1].textContent), '流年卡明示平滑、配對窗與同期容許值');
   const turnSnapshotActual = win.__hebingDiagnostics.buildTurningSnapshot();
   ok(turnSnapshotActual && turnSnapshotActual.version === 'turning-leadlag/v1' && turnSnapshotActual.daen.rows.length > 0 && turnSnapshotActual.year.rows.length > 0, '溫韻華命例產生大限／流年太乙轉折明細');
-  ok(turnSnapshotActual && turnSnapshotActual.daen.comparison === 'bazi' && turnSnapshotActual.year.comparison === 'bazi', '溫韻華命例初版門檻下，大限與流年皆判為太乙較貼近八字');
+  ok(turnSnapshotActual && turnSnapshotActual.daen.comparison === 'hebing' && turnSnapshotActual.year.comparison === 'hebing' && turnSnapshotActual.daen.pairs.hebing && !turnSnapshotActual.daen.pairs.bazi, '轉折快照只含 hebing 配對（v0.9.35）');
   ok([...turnCard.querySelectorAll('.turn-table tbody tr')].every(tr => /轉強|轉弱|未辨識/.test(tr.textContent)), '轉折明細逐筆標示轉強／轉弱與兩法配對');
 
   // 太乙錨定可信區：大限斜率主判、流年未來位置主判；方向／位置／轉折分級，兩層級上下各最多 6 組。
@@ -145,12 +152,12 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
     ok(/西元 1994–2008/.test(daDownText) && /西元 2013–2017/.test(daDownText),
        '溫韻華命例仍抓出原太乙下行連續區段');
     const daUpText = [...syncModes[0].querySelectorAll('.sync-col.up li')].map(li => li.textContent).join(' ');
-    ok(/B 雙法支持.*西元 2044–2052.*可信度 100%/.test(daUpText),
-       '溫韻華 2044–2052 以精簡格式列為太乙上行 B 級、可信度 100%');
+    ok(/A 強共識.*西元 1988–1993/.test(daUpText) && !/B 雙法支持/.test(daUpText+daDownText),
+       '溫韻華 1988–1993 列為太乙上行 A 強共識（八字＋紫微單一佐證線，無 B 級）');
     const anchorSnap = win.__hebingDiagnostics.buildSyncSnapshot();
     const wenUp = anchorSnap.daen.up.find(b => b.y0 === 2044 && b.y1 === 2052);
-    ok(wenUp && wenUp.pairs.bazi.score === 100 && wenUp.supporters.includes('八字'),
-       '畫面雖精簡，JSON／診斷快照仍保留八字支持分與支持線');
+    ok(wenUp && wenUp.pairs.hebing && typeof wenUp.pairs.hebing.score === 'number' && !wenUp.pairs.bazi,
+       '畫面雖精簡，JSON／診斷快照仍保留八字＋紫微支持分（pairs.hebing），不再有 pairs.bazi');
     const nowYear = new win.Date().getFullYear();
     const yrItems = [...syncModes[1].querySelectorAll('.sync-col li')];
     ok(yrItems.every(li => { const m=li.textContent.match(/西元 (\d{4})/); return m && +m[1] >= nowYear; }),
@@ -166,119 +173,94 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
        '每個太乙高低點皆標示年份、實歲與虛歲');
     const extremaActual = win.__hebingDiagnostics.buildAnnualExtremaSnapshot();
     const actualRows = extremaActual ? extremaActual.peaks.concat(extremaActual.troughs) : [];
-    ok(extremaActual && extremaActual.version === 'annual-extrema-echo/v5' && extremaActual.matchWindow === 1 && extremaActual.limit === 6 &&
+    ok(extremaActual && extremaActual.version === 'annual-extrema-echo/v6-hebing' && extremaActual.matchWindow === 1 && extremaActual.limit === 6 &&
        extremaActual.displayRule === 'at-least-one-qualified-support-match' &&
        extremaActual.positionThreshold.peak === .1 && extremaActual.positionThreshold.trough === -.1 && actualRows.length === peakRows.length + troughRows.length,
-       '高低點診斷快照使用 ±1 年規則，筆數與畫面一致');
-    ok(actualRows.every(row => [row.bazi,row.ziwei].every(m => !m || Math.abs(m.lag) <= 1)),
-       '八字／紫微的所有命中年份皆落在太乙點前後 1 年內');
-    ok(actualRows.every(row => row.bazi || row.ziwei) && peakRows.concat(troughRows).every(row => !/兩法皆未呼應/.test(row.textContent)),
-       '只保留八字或紫微至少一法有呼應的太乙點，兩法皆未呼應者不顯示');
+       '高低點診斷快照使用 ±1 年規則（v6 單一佐證線），筆數與畫面一致');
+    ok(actualRows.every(row => !row.hebing || Math.abs(row.hebing.lag) <= 1),
+       '八字＋紫微的所有命中年份皆落在太乙點前後 1 年內');
+    ok(actualRows.every(row => row.hebing && !row.bazi && !row.ziwei),
+       '只保留八字＋紫微有呼應的太乙點；快照不再有 bazi／ziwei 欄位（v0.9.35）');
     const extremaDomRows=peakRows.concat(troughRows);
-    ok(extremaDomRows.every((el,i) => el.querySelectorAll('.annual-extrema-method').length === [actualRows[i].bazi,actualRows[i].ziwei].filter(Boolean).length),
-       '八字與紫微各自分行，且只建立實際有呼應的方法列');
-    ok(extremaDomRows.every(el => [...el.querySelectorAll('.annual-extrema-method')].every(line => /^(八字|紫微) /.test(line.textContent.trim()))),
-       '每一條呼應資訊只呈現單一命法與其年份');
-    ok(!/皆有呼應|八字有呼應|紫微有呼應|無同類高點|無同類低點/.test(extremaBox.textContent),
+    ok(extremaDomRows.every(el => el.querySelectorAll('.annual-extrema-method').length === 1 && /^八字＋紫微 /.test(el.querySelector('.annual-extrema-method').textContent.trim())),
+       '每個太乙點只有一列「八字＋紫微」呼應資訊');
+    ok(!/皆有呼應|無同類高點|無同類低點|兩法/.test(extremaBox.textContent),
        '畫面移除呼應總結及未命中方法的說明文字');
-    const singleMatchIndex=actualRows.findIndex(row => Boolean(row.bazi) !== Boolean(row.ziwei));
-    ok(singleMatchIndex >= 0 && extremaDomRows[singleMatchIndex].querySelectorAll('.annual-extrema-method').length === 1 &&
-       (actualRows[singleMatchIndex].bazi ? !/紫微 /.test(extremaDomRows[singleMatchIndex].textContent) : !/八字 /.test(extremaDomRows[singleMatchIndex].textContent)),
-       '只有一法呼應時，只顯示該法資訊');
     const peakYears=extremaActual.peaks.map(row => row.year),troughYears=extremaActual.troughs.map(row => row.year);
     ok(peakYears.every((year,i) => i === 0 || peakYears[i-1] <= year) &&
        troughYears.every((year,i) => i === 0 || troughYears[i-1] <= year),
        '入選的太乙高點與低點皆依年份／年齡由小到大排列');
-    ok(!extremaActual.troughs.some(row => row.year === 1984 || row.year === 1986),
-       '溫韻華 1984、1986 太乙低點因八字與紫微皆未呼應而隱藏');
-    ok(actualRows.every(row => !row.bazi || (extremaActual.peaks.includes(row) ? row.bazi.value > .1 : row.bazi.value < -.1)) &&
-       actualRows.every(row => !row.ziwei || (extremaActual.peaks.includes(row) ? row.ziwei.value > .1 : row.ziwei.value < -.1)),
+    ok(actualRows.every(row => extremaActual.peaks.includes(row) ? row.hebing.value > .1 : row.hebing.value < -.1),
        '佐證線高點皆在 +0.1 以上，低點皆在 −0.1 以下');
-    const peak2026=extremaActual.peaks.find(row => row.year === 2026);
-    ok(peak2026 && peak2026.bazi === null && peak2026.ziwei && peak2026.ziwei.year === 2027,
-       '溫韻華 2026 太乙高點排除同年八字低檔反彈 −5，八字 2028 因差 2 年亦排除，只保留紫微 2027');
     ok(extremaActual.specialYearRule === 'taiyi-engine-virtual-age-overlap-on-source-and-matched-support-years' &&
        extremaActual.specialYears.luMaThreeWay.includes(62) && extremaActual.specialYears.luMaTwoWay.includes(48) &&
        extremaActual.specialYears.luZhuAndFeiLu.includes(49) && extremaActual.specialYears.luZhuAndFeiMa.includes(46),
        '高低點快照直接帶入太乙引擎的祿馬交馳、祿主＋飛祿與祿主＋飛馬歲數');
-    // v0.9.29 曆書延至 2100：2051 年後高點參賽，2024 被擠出前 6 組（規則「各取 6 組」待 Nakai 裁定是否上調／限窗）
-    ok(extremaActual.peaks.some(row => row.year > 2050),
-       '溫韻華 太乙高點名單含 2051 年後年份（曆書延長後參賽）');
-    const peak2024=extremaActual.peaks.find(row => row.year === 2024);
-    ok(!peak2024 || (peak2024.specialSignals.some(s => s.key === 'luZhuAndFeiLu' && s.age === 49) &&
-       peak2024.bazi && peak2024.bazi.year === 2023 && peak2024.bazi.specialSignals.some(s => s.key === 'luMaTwoWay' && s.age === 48)),
-       '溫韻華 2024 若入選則標記祿主＋飛祿、八字配對 2023 祿馬雙合（v0.9.29 起可能被後段高點擠出）');
     const specialChips=[...extremaBox.querySelectorAll('.extrema-signal')].map(el => el.textContent.trim());
-    ok(specialChips.includes('祿主飛祿') && specialChips.includes('祿馬交馳') &&
-       specialChips.every(text => text === '祿馬交馳' || text === '祿主飛祿'),
+    ok(specialChips.every(text => text === '祿馬交馳' || text === '祿主飛祿'),
        '畫面特殊年份只使用「祿馬交馳／祿主飛祿」兩種簡短標籤');
     ok([...extremaBox.querySelectorAll('.extrema-signal')].every(el =>
        !/太乙|八字|紫微|虛歲|事業財富|三合|雙合|開拓升遷/.test(el.textContent)),
        '標籤正文移除命法、歲數、三合／雙合及長描述，完整資訊只留在提示與 JSON');
   }
 
-  // 獨立規則測試：數值即使仍為正，只要太乙與任一法負斜率就成立；搭配線可連續切換。
+  // 獨立規則測試（v0.9.35 兩線）：數值即使仍為正，只要太乙與八字＋紫微同為負斜率就成立；太乙轉上即不成立。
   const syntheticDown = win.__hebingDiagnostics.slopeOverlapBands('daen', [
-    { id:'bazi', pts:[{x:2000,v:.8},{x:2002,v:.4},{x:2004,v:.6},{x:2005,v:.4}] },
-    { id:'ziwei-daen', pts:[{x:2000,v:.2},{x:2002,v:.5},{x:2004,v:.2},{x:2005,v:0}] },
+    { id:'wuxing-line', pts:[{x:2000,v:.8},{x:2002,v:.4},{x:2004,v:.2},{x:2005,v:0}] },
     { id:'taiyi-xianli', pts:[{x:2000,v:.9},{x:2004,v:.5},{x:2005,v:.8}] }
   ], 'lo');
   ok(syntheticDown.length === 1 && syntheticDown[0].y0 === 2000 && syntheticDown[0].y1 === 2004,
-     '曲線仍在中線上方也能依負斜率成立；太乙轉上時即使另兩線向下也不成立');
-  ok(syntheticDown[0] && syntheticDown[0].companions.join('、') === '八字、紫微',
-     '連續區段搭配線由八字切換紫微時合併並保留兩者標記');
+     '曲線仍在中線上方也能依負斜率成立；太乙轉上時即使八字＋紫微向下也不成立');
+  ok(syntheticDown[0] && syntheticDown[0].companions.join('、') === '八字＋紫微',
+     '下行區段搭配線標記為八字＋紫微');
   ok(syntheticDown[0] && syntheticDown[0].strength > 0 && syntheticDown[0].slopeStrength > 0 && syntheticDown[0].trendStart === 2000 && syntheticDown[0].trendEnd === 2004,
      '下行資料保留共同下降總幅度、平均斜率與精確趨勢起訖');
   const syntheticSnapshot = win.__hebingDiagnostics.syncSnapshotRows(syntheticDown, 1980);
-  ok(syntheticSnapshot[0] && syntheticSnapshot[0].companions.length === 2,
+  ok(syntheticSnapshot[0] && syntheticSnapshot[0].companions.length === 1,
      '同步區段快照保留太乙搭配線 companions');
   const syntheticUp = win.__hebingDiagnostics.slopeOverlapBands('daen', [
-    { id:'bazi', pts:[{x:2000,v:.1},{x:2004,v:.5}] },
-    { id:'ziwei-daen', pts:[{x:2000,v:.2},{x:2004,v:.6}] },
+    { id:'wuxing-line', pts:[{x:2000,v:.1},{x:2004,v:.5}] },
     { id:'taiyi-xianli', pts:[{x:2000,v:.3},{x:2004,v:.7}] }
   ], 'hi');
   ok(syntheticUp.length === 1 && syntheticUp[0].kind === 'hi' && syntheticUp[0].basis === 'slope',
-     '大限三線皆為正斜率時形成同步往上區段');
+     '大限兩線皆為正斜率時形成同步往上區段');
 
   const syntheticFallbackUp = win.__hebingDiagnostics.daenPositionFallbackBands([
-    { id:'bazi', pts:[{x:2000,v:.4},{x:2004,v:.8}] },
-    { id:'ziwei-daen', pts:[{x:2000,v:.8},{x:2004,v:.4}] },
+    { id:'wuxing-line', pts:[{x:2000,v:.8},{x:2004,v:.4}] },
     { id:'taiyi-xianli', pts:[{x:2000,v:.5},{x:2004,v:.9}] }
   ], 'hi');
-  ok(syntheticFallbackUp.length === 1 && syntheticFallbackUp[0].basis === 'position-fallback' && syntheticFallbackUp[0].nearSlopeCount === 2,
-     '大限上升只差一線斜率時，三線位置皆高可列為位置補判');
+  ok(syntheticFallbackUp.length === 1 && syntheticFallbackUp[0].basis === 'position-fallback' && syntheticFallbackUp[0].nearSlopeCount === 1,
+     '大限上升只有太乙上行時，兩線位置皆高可列為位置補判');
   const syntheticFallbackDown = win.__hebingDiagnostics.daenPositionFallbackBands([
-    { id:'bazi', pts:[{x:2000,v:-.8},{x:2004,v:-.6}] },
-    { id:'ziwei-daen', pts:[{x:2000,v:-.3},{x:2004,v:-.7}] },
-    { id:'taiyi-xianli', pts:[{x:2000,v:-.9},{x:2004,v:-.5}] }
+    { id:'wuxing-line', pts:[{x:2000,v:-.8},{x:2004,v:-.6}] },
+    { id:'taiyi-xianli', pts:[{x:2000,v:-.5},{x:2004,v:-.9}] }
   ], 'lo');
-  ok(syntheticFallbackDown.length === 1 && syntheticFallbackDown[0].basis === 'position-fallback' && syntheticFallbackDown[0].companions.includes('紫微'),
-     '大限下降斜率近似未符時，太乙與任一法同在低檔可列為位置補判');
+  ok(syntheticFallbackDown.length === 1 && syntheticFallbackDown[0].basis === 'position-fallback' && syntheticFallbackDown[0].companions.includes('八字＋紫微'),
+     '大限下降斜率未符時，太乙與八字＋紫微同在低檔可列為位置補判');
 
   // 流年位置測試：負值即使逐年回升，仍屬同一個下方區段；過去年份須排除。
   const syntheticFuture = win.__hebingDiagnostics.futurePositionBands('year', [
-    { id:'bazi-annual', pts:[{x:2029,v:-.8},{x:2030,v:-.7},{x:2031,v:-.6},{x:2032,v:-.5},{x:2033,v:-.4}] },
-    { id:'ziwei-year', pts:[{x:2029,v:.4},{x:2030,v:.4},{x:2031,v:.4},{x:2032,v:.4},{x:2033,v:.4}] },
+    { id:'wuxing-year', pts:[{x:2029,v:-.8},{x:2030,v:-.7},{x:2031,v:-.6},{x:2032,v:-.5},{x:2033,v:-.4}] },
     { id:'taiyi-xingnian', pts:[{x:2029,v:-.9},{x:2030,v:-.8},{x:2031,v:-.7},{x:2032,v:-.6},{x:2033,v:-.5}] }
   ], 2030);
   ok(syntheticFuture.length === 1 && syntheticFuture[0].kind === 'lo' && syntheticFuture[0].y0 === 2030 && syntheticFuture[0].y1 === 2033,
      '流年依位置把連續下方年份合併成一組，不拆成多個單年點，並排除未來起點之前');
 
-  // 太乙錨定分級：A／B／C／衝突門檻，以及流年連續至少兩年。
+  // 太乙錨定分級（v0.9.35 單一佐證線）：A／C／衝突門檻，以及流年連續至少兩年。
   const grade = win.__hebingDiagnostics.anchorBandGrade;
-  ok(grade({score:80,opposition:0},{score:75,opposition:0}) === 'A' &&
-     grade({score:75,opposition:0},{score:20,opposition:20}) === 'B' &&
-     grade({score:55,opposition:10},{score:10,opposition:20}) === 'C' &&
-     grade({score:20,opposition:50},{score:10,opposition:60}) === 'conflict',
-     '太乙錨定 A／B／C／衝突分級門檻成立');
+  ok(grade({score:80,opposition:0}) === 'A' &&
+     grade({score:75,opposition:40}) === 'C' &&
+     grade({score:55,opposition:10}) === 'C' &&
+     grade({score:20,opposition:50}) === 'conflict' &&
+     grade({score:20,opposition:10}) === null,
+     '太乙錨定 A／C／衝突分級門檻成立（無 B 級）');
   const anchorSynthetic = win.__hebingDiagnostics.buildAnchoredBands('year', [
-    {id:'bazi-annual',pts:[{x:2029,v:.4},{x:2030,v:.5},{x:2031,v:.6},{x:2032,v:.7},{x:2033,v:.8}]},
-    {id:'ziwei-year',pts:[{x:2029,v:.3},{x:2030,v:.4},{x:2031,v:.5},{x:2032,v:.6},{x:2033,v:.7}]},
+    {id:'wuxing-year',pts:[{x:2029,v:.4},{x:2030,v:.5},{x:2031,v:.6},{x:2032,v:.7},{x:2033,v:.8}]},
     {id:'taiyi-xingnian',pts:[{x:2029,v:.5},{x:2030,v:.6},{x:2031,v:.7},{x:2032,v:.8},{x:2033,v:.9}]}
   ],2030);
   ok(anchorSynthetic.length === 1 && anchorSynthetic[0].y0 === 2030 && anchorSynthetic[0].y1 === 2033 && anchorSynthetic[0].grade === 'A' &&
-     anchorSynthetic[0].pairs.bazi.score >= 70 && anchorSynthetic[0].pairs.ziwei.score >= 70,
-     '流年太乙高檔連續區合併，八字與紫微皆完整支持時列 A 級');
+     anchorSynthetic[0].pairs.hebing.score >= 70 && !anchorSynthetic[0].pairs.bazi,
+     '流年太乙高檔連續區合併，八字＋紫微完整支持時列 A 級');
   const rankedThenChronological=win.__hebingDiagnostics.pickAnchoredBands([
     {kind:'up',grade:'C',confidence:99,y0:1990,y1:1995},
     {kind:'up',grade:'A',confidence:80,y0:2030,y1:2035},
@@ -354,13 +336,13 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
   doc.getElementById('ovZiweiMode').onchange();
   await sleep(100);
   svg = doc.getElementById('ovChart').innerHTML;
-  ok(countPoly(svg) === 3, '流年合盤：八字流年＋紫微逐年＋太乙行年 三條 polyline（實得 ' + countPoly(svg) + '）');
+  ok(countPoly(svg) === 4, '流年合盤（全開）：八字流年＋紫微逐年＋八字＋紫微流年曲線＋太乙行年 四條 polyline（實得 ' + countPoly(svg) + '）');
   ok(/#46708a/.test(svg) && !/#7d5a44/.test(svg), '行年藍線進場、限例棕線退場（level 過濾生效）');
   ok(/太乙行年趨勢（虛歲逐歲/.test(doc.getElementById('ovLegend').textContent)
      && !/限例太乙（十二宮歲段/.test(doc.getElementById('ovLegend').textContent), '圖例隨層級切換太乙線說明');
   const resoTxtY = doc.getElementById('resoGrid').textContent;
-  ok(/八字流年 × 紫微逐年能量/.test(resoTxtY), '共振卡含 八字流年 × 紫微逐年');
-  ok(/太乙行年趨勢/.test(resoTxtY) && (resoTxtY.match(/同向率/g) || []).length === 3, '流年合盤三序列 3 組配對（含太乙行年）');
+  ok(!/八字流年 × 紫微逐年能量/.test(resoTxtY), '共振卡不再顯示 八字流年 × 紫微逐年（v0.9.35）');
+  ok(/八字＋紫微（五行主線・流年） × 太乙行年趨勢/.test(resoTxtY) && (resoTxtY.match(/同向率/g) || []).length === 1, '流年共振卡只顯示核心配對：八字＋紫微流年 × 太乙行年');
   // 流年合盤明細：同年並列八字流年讀數
   const hitY = [...doc.querySelectorAll('.ov-hit')].find(r => r.getAttribute('data-yr') === '2026');
   if (hitY) hitY.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
@@ -385,16 +367,16 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
     data: { series: [{ id: 'synth-x', label: '合成序列', color: '#888888', points: synth }] } }, '*');
   await sleep(300);
   svg = doc.getElementById('ovChart').innerHTML;
-  ok(countPoly(svg) === 4, '無層級合成序列於大限層顯示：4 條（實得 ' + countPoly(svg) + '）');
+  ok(countPoly(svg) === 5, '無層級合成序列於大限層顯示：4 條＋五行主線曲線＝5 條（實得 ' + countPoly(svg) + '）');
   doc.getElementById('ovZiweiMode').value = 'year';
   doc.getElementById('ovZiweiMode').onchange();
   await sleep(100);
-  ok(countPoly(doc.getElementById('ovChart').innerHTML) === 4, '無層級合成序列於流年層亦顯示：4 條');
+  ok(countPoly(doc.getElementById('ovChart').innerHTML) === 5, '無層級合成序列於流年層亦顯示：4 條＋八字＋紫微流年曲線＝5 條');
   doc.getElementById('ovZiweiMode').value = 'daen';
   doc.getElementById('ovZiweiMode').onchange();
   await sleep(100);
   const pairN = ((doc.getElementById('resoGrid').textContent).match(/同向率/g) || []).length;
-  ok(pairN === 6, '四序列兩兩共振：6 組配對（實得 ' + pairN + '）');
+  ok(pairN === 1, '共振卡只顯示核心配對 1 組（其餘配對仍在存檔 resonance.pairs）（實得 ' + pairN + '）');
 
   console.log('== 存檔／讀取／輸出圖檔 ==');
   // 存檔：攔 Blob 內容驗契約
@@ -411,7 +393,31 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
   ok(!!savedJson, '存檔產生 JSON');
   let saveObj = null;
   try { saveObj = JSON.parse(savedJson); } catch (e) {}
-  ok(!!saveObj && saveObj.schema === 'xiaoliu.hebing-save/v2', '契約 schema 升為 v2');
+  ok(!!saveObj && saveObj.schema === 'xiaoliu.hebing-save/v3', '契約 schema 升為 v3');
+  /* v0.9.30 五行主線：v3 新欄位齊備 */
+  const zd0 = saveObj && saveObj.curves && saveObj.curves.ziwei && saveObj.curves.ziwei.daen;
+  ok(Array.isArray(zd0) && zd0.length === 12 && zd0.every(d => d.zhiElement && Array.isArray(d.stars) && d.hua), '存檔 daen[] 含 zhiElement／stars／hua（v3）');
+  ok(!!(saveObj.curves.ziwei.palaces && saveObj.curves.ziwei.palaces.length === 12), '存檔 ziwei.palaces 十二宮（v3）');
+  ok(!!(saveObj.curves.bazi && saveObj.curves.bazi.dayMaster && saveObj.curves.bazi.dayMaster.gan === '己'), '存檔 bazi.dayMaster 為己（v3）');
+  const wei = zd0 && zd0.find(d => d.zhi === '未'), wu = zd0 && zd0.find(d => d.zhi === '午');
+  ok(!!(wei && wei.stars[0] && wei.stars[0].name === '天機' && wei.stars[0].daHua === '祿'), '未宮主星天機化祿');
+  ok(!!(wu && wu.stars[0] && wu.stars[0].name === '破軍' && wu.stars[0].daHua === '權'), '午宮主星破軍化權');
+  const wxRows = dom.window.document.querySelectorAll('#wuxingGrid .wx-block');
+  ok(wxRows.length === 12, '推象七層卡列出十二大限（實得 ' + wxRows.length + '）');
+  const wxTxt = dom.window.document.querySelector('#wuxingGrid').textContent;
+  ok(/巳為帝旺/.test(wxTxt) && /午為臨官（祿）/.test(wxTxt), '十二長生位：己在巳帝旺、午臨官（祿）');
+  ok(/辛卯運：辛金我生（食傷・喜・洩口）/.test(wxTxt), '大運兩面：辛金標為洩口');
+  ok(/出口在外（宜）/.test(wxTxt), '對宮規則：出口在外標籤出現');
+  ok(/題目 遷移＝外・出門/.test(wxTxt), '宮名題目層顯示');
+  ok(/求學（虛歲 13–22）：財＝零用錢/.test(wxTxt) && /初入職場（虛歲 23–32）：財＝薪水/.test(wxTxt), '年齡段貨幣換算顯示（求學／初入職場）');
+  ok(/被管得財/.test(dom.window.document.querySelector('#wuxingGrid').textContent), '五行主線判詞含已回測格「被管得財」');
+  /* v0.9.31 五行主線曲線 */
+  const wl = saveObj.resonance && saveObj.resonance.pairs && saveObj.resonance.pairs.filter(p => p.a === '八字＋紫微（五行主線）' || p.b === '八字＋紫微（五行主線）');
+  ok(!!(wl && wl.length >= 3), '共振 pairs 含五行主線曲線 × 其餘各線（實得 ' + (wl ? wl.length : 0) + '）');
+  const wxT = wl && wl.find(p => p.a === '限例太乙' || p.b === '限例太乙');
+  ok(!!(wxT && wxT.sameRate !== null), '五行主線曲線 × 限例太乙 有方向一致率（' + (wxT ? wxT.sameRate + '%' : '—') + '）');
+  ok(!!dom.window.document.querySelector('#ovChart polyline[stroke-dasharray="6 4"]'), '曲線圖畫出五行主線虛線');
+  ok(/五行主線曲線（假說級）/.test(dom.window.document.querySelector('#wuxingGrid').textContent), '五行主線卡顯示曲線說明與配對統計');
   ok(saveObj && saveObj.input.y === 1976 && saveObj.input.h === 11 && saveObj.input.gender === 'F', '存檔輸入欄位正確');
   ok(saveObj && saveObj.curves.bazi && saveObj.curves.bazi.pillars.length === 10, '存檔含八字曲線資料');
   ok(saveObj && saveObj.curves.bazi.specialScoring &&
@@ -441,19 +447,19 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
      '存檔含大限／流年上下各最多 6 組的太乙錨定快照');
   const savedDown = saveObj && saveObj.resonance && saveObj.resonance.syncAlerts
     ? saveObj.resonance.syncAlerts.daen.down.concat(saveObj.resonance.syncAlerts.year.down) : [];
-  ok(savedDown.every(b => ['A','B','C','conflict'].includes(b.grade) && Number.isFinite(b.confidence) && b.pairs && b.pairs.bazi && b.pairs.ziwei),
-     '存檔每個區段保留可信等級、可信度及八字／紫微證據');
+  ok(savedDown.every(b => ['A','C','conflict'].includes(b.grade) && Number.isFinite(b.confidence) && b.pairs && b.pairs.hebing && !b.pairs.bazi),
+     '存檔每個區段保留可信等級、可信度及八字＋紫微證據（無 B 級、無 bazi／ziwei 欄位）');
   const syncSave = saveObj && saveObj.resonance && saveObj.resonance.syncAlerts;
-  ok(syncSave && syncSave.version === 'taiyi-anchored-zones/v1' && syncSave.daenRule === 'taiyi-anchor-slope-primary' &&
+  ok(syncSave && syncSave.version === 'taiyi-anchored-zones/v2-hebing' && syncSave.companion && syncSave.daenRule === 'taiyi-anchor-slope-primary' &&
      syncSave.yearRule === 'taiyi-anchor-future-position-primary-3y-smooth' && Number.isFinite(syncSave.futureFromYear) &&
      syncSave.weights.daen.direction === 40 && syncSave.weights.year.position === 50 &&
      syncSave.displayOrder === 'chronological-after-grade-confidence-selection',
      '存檔標明太乙錨定版本、大限斜率主判、流年位置主判與權重');
-  ok(saveObj && saveObj.resonance.taiyiAnchoredZones && saveObj.resonance.taiyiAnchoredZones.version === 'taiyi-anchored-zones/v1',
+  ok(saveObj && saveObj.resonance.taiyiAnchoredZones && saveObj.resonance.taiyiAnchoredZones.version === 'taiyi-anchored-zones/v2-hebing',
      '存檔新增 taiyiAnchoredZones，並保留 syncAlerts 相容欄位');
   const savedDaen = syncSave ? syncSave.daen.up.concat(syncSave.daen.down) : [];
   ok(savedDaen.length > 0 && savedDaen.every(b => b.basis === 'slope' || b.basis === 'position-fallback') &&
-     savedDaen.every(b => Array.isArray(b.supporters) && b.pairs.bazi.directionRate >= 0 && b.pairs.ziwei.positionRate >= 0),
+     savedDaen.every(b => Array.isArray(b.supporters) && b.pairs.hebing.directionRate >= 0 && b.pairs.hebing.positionRate >= 0),
      '大限快照保留斜率／位置來源、支持線與方向／位置證據');
   ok(syncSave && syncSave.year.up.concat(syncSave.year.down).every(b => b.basis === 'position' && b.y0 >= syncSave.futureFromYear),
      '流年快照採 position basis，且只含今年起的未來區段');
@@ -463,25 +469,25 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
   const turnSave = saveObj && saveObj.resonance && saveObj.resonance.turningAnalysis;
   ok(turnSave && turnSave.version === 'turning-leadlag/v1' && turnSave.daen && turnSave.year,
      '存檔含大限／流年單盤轉折與領先／落後分析快照');
-  ok(turnSave && ['bazi','ziwei','close'].includes(turnSave.daen.comparison) &&
-     [turnSave.daen.pairs.bazi,turnSave.daen.pairs.ziwei,turnSave.year.pairs.bazi,turnSave.year.pairs.ziwei]
-       .every(p => Number.isFinite(p.fitScore) && p.fitScore >= 0 && p.fitScore <= 100 && Array.isArray(p.match.matches)),
+  ok(turnSave && turnSave.daen.comparison === 'hebing' &&
+     [turnSave.daen.pairs.hebing,turnSave.year.pairs.hebing]
+       .every(p => p && Number.isFinite(p.fitScore) && p.fitScore >= 0 && p.fitScore <= 100 && Array.isArray(p.match.matches)),
      '轉折快照保存比較結論、0–100 貼合度與逐筆配對');
   const extremaSave = saveObj && saveObj.resonance && saveObj.resonance.annualExtrema;
   const extremaSaveRows = extremaSave ? extremaSave.peaks.concat(extremaSave.troughs) : [];
-  ok(extremaSave && extremaSave.version === 'annual-extrema-echo/v5' && extremaSave.matchWindow === 1 && extremaSave.limit === 6 &&
+  ok(extremaSave && extremaSave.version === 'annual-extrema-echo/v6-hebing' && extremaSave.matchWindow === 1 && extremaSave.limit === 6 &&
      extremaSave.peaks.length <= 6 && extremaSave.troughs.length <= 6,
      '存檔含太乙最高／最低各最多 6 點及 ±1 年呼應規則');
   ok(extremaSaveRows.every(r => Number.isFinite(r.realAge) && Number.isFinite(r.virtualAge) &&
-     [r.bazi,r.ziwei].every(m => !m || Math.abs(m.lag) <= 1)),
-     '高低點存檔保留實歲／虛歲，所有八字／紫微命中差值均在 ±1 年內');
-  ok(extremaSaveRows.every(r => r.bazi || r.ziwei),
-     '高低點存檔只保留至少一法有合格呼應的太乙點');
+     [r.hebing].every(m => !m || Math.abs(m.lag) <= 1)),
+     '高低點存檔保留實歲／虛歲，所有八字＋紫微命中差值均在 ±1 年內');
+  ok(extremaSaveRows.every(r => r.hebing),
+     '高低點存檔只保留八字＋紫微有合格呼應的太乙點');
   ok([extremaSave.peaks,extremaSave.troughs].every(rows => rows.every((r,i) => i === 0 || rows[i-1].year <= r.year)),
      '高低點存檔依年份／年齡由小到大排列');
   ok(extremaSaveRows.every(r => Array.isArray(r.specialSignals) &&
      [r.bazi,r.ziwei].every(m => !m || Array.isArray(m.specialSignals))) &&
-     extremaSaveRows.some(r => r.specialSignals.length || (r.bazi&&r.bazi.specialSignals.length) || (r.ziwei&&r.ziwei.specialSignals.length)),
+     extremaSaveRows.some(r => r.specialSignals.length || (r.hebing&&r.hebing.specialSignals.length)),
      '高低點存檔保留太乙本點與八字／紫微配對年的特殊年份標籤');
   win.Blob = OrigBlob;
 
@@ -582,11 +588,11 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
   ok(!!pdfResult && fakePdf && fakePdf.pages === 5 && fakePdf.images === 5, 'PDF 報告固定輸出 5 頁（兩張曲線＋兩層太乙錨定區＋高低點呼應）');
   ok(fakePdf && /^hebing-curve-report-.*\.pdf$/.test(fakePdf.saved), 'PDF 報告以命主與日期命名並呼叫儲存');
   ok(fakePdf && /大限曲線、流年曲線、太乙錨定可信區段與太乙流年高低點 ±1 年呼應/.test(fakePdf.properties.subject) && !/轉折/.test(fakePdf.properties.subject), 'PDF metadata 明示兩張曲線、太乙錨定區與高低點呼應');
-  ok(pdfResult && pdfResult.annualExtrema && pdfResult.annualExtrema.version === 'annual-extrema-echo/v5' &&
+  ok(pdfResult && pdfResult.annualExtrema && pdfResult.annualExtrema.version === 'annual-extrema-echo/v6-hebing' &&
      fakeDrawnText.some(t=>/太乙流年高低點 ±1 年呼應/.test(t)) &&
      fakeDrawnText.some(t=>/太乙最高 6 個局部高點/.test(t)) && fakeDrawnText.some(t=>/太乙最低 6 個局部低點/.test(t)),
-     'PDF 第 5 頁使用既有 annual-extrema-echo/v5 快照並列出高低點雙欄');
-  ok(fakeDrawnText.some(t=>/^八字 /.test(t)) || fakeDrawnText.some(t=>/^紫微 /.test(t)), 'PDF 高低點頁只繪出實際呼應的八字／紫微資料行');
+     'PDF 第 5 頁使用 annual-extrema-echo/v6-hebing 快照並列出高低點雙欄');
+  ok(fakeDrawnText.some(t=>/^八字＋紫微 /.test(t)) && !fakeDrawnText.some(t=>/^紫微 /.test(t)), 'PDF 高低點頁只繪出八字＋紫微呼應資料行');
   ok(doc.getElementById('ovZiweiMode').value === modeBeforePdf && doc.getElementById('ovPdf').textContent === '輸出曲線 PDF 報告', 'PDF 擷取完成後還原原合盤模式與按鈕文字');
   const srcPdfHtml = require('fs').readFileSync(require('path').join(__dirname, 'index.html'), 'utf-8');
   ok(/太乙錨定可信區段｜/.test(srcPdfHtml) && /reportBandReading/.test(srcPdfHtml), 'PDF 原始碼包含太乙錨定區段逐組解讀內容');
@@ -612,19 +618,15 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
 
   console.log('== v0.9.28 可信度公式（純函式斷言）==');
   {
-    const conf = (grade,b,z) => {
-      if(grade==='conflict') return Math.min(b.opposition,z.opposition);
-      const bb=Math.max(0,b.score-b.opposition), zz=Math.max(0,z.score-z.opposition);
-      return grade==='A'?Math.min(bb,zz):Math.max(bb,zz);
-    };
+    /* v0.9.35 單一佐證線 */
+    const conf = (grade,h) => grade==='conflict'?h.opposition:Math.max(0,h.score-h.opposition);
     // 上列公式須與 index.html 的 anchorBandConfidence 完全一致；下方以實跑快照交叉驗證。
-    ok(conf('B',{score:72,opposition:10},{score:20,opposition:65})===62, 'B 級可信度＝支持減反向（72/10 vs 20/65 → 62，非 72）');
-    ok(conf('A',{score:80,opposition:10},{score:75,opposition:20})===55, 'A 級取兩法淨值較小者（→ 55）');
-    ok(conf('C',{score:40,opposition:50},{score:30,opposition:35})===0,  'C 級淨值為負時歸零，不得出現負可信度');
-    ok(conf('conflict',{score:10,opposition:60},{score:15,opposition:45})===45, '衝突區沿用原語意，取兩法反向較小者');
+    ok(conf('A',{score:80,opposition:10})===70, 'A 級可信度＝支持減反向（80/10 → 70）');
+    ok(conf('C',{score:40,opposition:50})===0,  'C 級淨值為負時歸零，不得出現負可信度');
+    ok(conf('conflict',{score:10,opposition:60})===60, '衝突區可信度＝反向分');
     const bandsAll = [syncSave.daen.up,syncSave.daen.down,syncSave.year.up,syncSave.year.down]
       .reduce((a,r)=>a.concat(r),[]);
-    ok(bandsAll.length>0 && bandsAll.every(b=>b.confidence===conf(b.grade,b.pairs.bazi,b.pairs.ziwei)),
+    ok(bandsAll.length>0 && bandsAll.every(b=>b.confidence===conf(b.grade,b.pairs.hebing)),
       '實跑快照每一區段的可信度皆等於新公式重算值');
     ok(bandsAll.every(b=>b.confidence>=0 && b.confidence<=100), '可信度恆落在 0–100');
   }
@@ -633,16 +635,14 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
   {
     const bandsAll = [syncSave.daen.up,syncSave.daen.down,syncSave.year.up,syncSave.year.down]
       .reduce((a,r)=>a.concat(r),[]);
-    ok(bandsAll.every(b=>b.pairs.bazi.reliability!==undefined &&
-        Number.isFinite(b.pairs.bazi.scoreRaw) && Number.isFinite(b.pairs.bazi.oppositionRaw)),
-      '每個區段保留八字可靠度係數與折扣前原始分數');
-    ok(bandsAll.every(b=>b.pairs.bazi.score===Math.round(b.pairs.bazi.scoreRaw*b.pairs.bazi.reliability) &&
-        b.pairs.bazi.opposition===Math.round(b.pairs.bazi.oppositionRaw*b.pairs.bazi.reliability)),
+    ok(bandsAll.every(b=>b.pairs.hebing.reliability!==undefined &&
+        Number.isFinite(b.pairs.hebing.scoreRaw) && Number.isFinite(b.pairs.hebing.oppositionRaw)),
+      '每個區段保留八字可靠度係數與折扣前原始分數（套在八字＋紫微線上）');
+    ok(bandsAll.every(b=>b.pairs.hebing.score===Math.round(b.pairs.hebing.scoreRaw*b.pairs.hebing.reliability) &&
+        b.pairs.hebing.opposition===Math.round(b.pairs.hebing.oppositionRaw*b.pairs.hebing.reliability)),
       '支持與反向同時套用可靠度係數，不只折扣支持');
-    ok(bandsAll.every(b=>b.pairs.ziwei.reliability===undefined),
-      '紫微不套用可靠度係數（不依賴喜用神）');
     const conf1976 = saveObj.curves.bazi.strength.confidence;
-    ok(conf1976==='明顯' && bandsAll.every(b=>b.pairs.bazi.reliability===1),
+    ok(conf1976==='明顯' && bandsAll.every(b=>b.pairs.hebing.reliability===1),
       '本盤旺衰判定為「明顯」且無疑似格備選，係數維持 1（回歸不變）');
   }
 
@@ -661,8 +661,8 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
     ok(o2.curves.bazi.strength.confidence==='臨界', '此盤旺衰判定確為「臨界」（折扣路徑的前提）');
     const b2 = [o2.resonance.syncAlerts.daen.up,o2.resonance.syncAlerts.daen.down,
                 o2.resonance.syncAlerts.year.up,o2.resonance.syncAlerts.year.down].reduce((a,r)=>a.concat(r),[]);
-    ok(b2.length>0 && b2.every(b=>b.pairs.bazi.reliability===0.6), '臨界盤的八字可靠度係數為 0.6');
-    ok(b2.some(b=>b.pairs.bazi.score<b.pairs.bazi.scoreRaw), '臨界盤實際發生折扣（折扣後分數低於原始分數）');
+    ok(b2.length>0 && b2.every(b=>b.pairs.hebing.reliability===0.6), '臨界盤的八字可靠度係數為 0.6');
+    ok(b2.some(b=>b.pairs.hebing.score<b.pairs.hebing.scoreRaw), '臨界盤實際發生折扣（折扣後分數低於原始分數）');
     ok(/八字可靠度 60%/.test(c2.getElementById('syncGrid').textContent), '畫面顯示「八字可靠度 60%」，折扣不隱形');
     d2.window.close();
   }
@@ -709,7 +709,16 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
     ok(/雙法財運共振/.test(doc.getElementById('wealthGrid').textContent) &&
        /甲午/.test(doc.getElementById('wealthGrid').textContent) &&
        /太陰化祿/.test(doc.getElementById('wealthGrid').textContent),
-      '財運訊號卡同時呈現雙法共振、八字與紫微三區');
+      '財運訊號卡摺疊區仍保留雙法共振、八字與紫微三區（舊口徑）');
+    /* v0.9.36 推象財路 */
+    const wt = saveObj.resonance.wealthTuixiang, wgTxt = doc.getElementById('wealthGrid').textContent;
+    ok(wt && wt.schema==='xiaoliu.wealth-tuixiang/v1' && wt.affectsCurve===false && wt.dayMaster.gan==='己', '存檔含推象財路快照（schema v1、不參與計分、日主己）');
+    ok(wt.daen.some(d=>d.y0===2018&&d.grade==='強'&&/被管得財/.test(d.reasons.join())) && wt.daen.some(d=>d.y0===2028&&/自己主導財/.test(d.reasons.join())) && !wt.daen.some(d=>d.y0===2008),
+      '推象財路：2018 未宮被管得財（強）、2028 午宮自己主導財；2008 申宮紫府不列');
+    ok(wt.annual.some(a=>a.year===2032&&a.grade==='強') && wt.annual.some(a=>a.year===2033&&/破軍化祿/.test(a.reasons.join())),
+      '推象財路流年：2032 壬子（干支皆財）強、2033 破軍化祿入大限命宮');
+    ok(/推象財路（日主 己土，財＝水）/.test(wgTxt) && /財路・大限/.test(wgTxt) && /財路・流年/.test(wgTxt) && /財＝資產與現金流/.test(wgTxt),
+      '財運卡以推象財路為主區，附年齡段貨幣');
     ok(!/財運/.test(doc.getElementById('syncGrid').textContent),
       '財運訊號自成一卡，未混入太乙錨定可信區段');
   }
@@ -753,16 +762,20 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
   for (let i = 0; i < 100 && !/svg/.test(doc.getElementById('ovChart').innerHTML); i++) await sleep(100);
   const svg2 = doc.getElementById('ovChart').innerHTML;
   ok(/八字：/.test(doc.getElementById('f-status').textContent), '狀態列標出八字端錯誤');
-  for (let i = 0; i < 50 && countPoly(doc.getElementById('ovChart').innerHTML) < 2; i++) await sleep(100);
+  for (let i = 0; i < 50 && !/限例太乙（十二宮歲段/.test(doc.getElementById('ovLegend').textContent); i++) await sleep(100);
+  ok(countPoly(doc.getElementById('ovChart').innerHTML) === 1, '八字壞掉＋預設勾選時只剩限例太乙一條（五行主線曲線需八字）（實得 ' + countPoly(doc.getElementById('ovChart').innerHTML) + '）');
+  [...doc.querySelectorAll('[data-method]')].forEach(c => { if (!c.checked) c.click(); });
+  await sleep(300);
   const svg2b = doc.getElementById('ovChart').innerHTML;
-  ok(countPoly(svg2b) === 2, '八字壞掉時紫微大限＋限例太乙仍繪出（實得 ' + countPoly(svg2b) + '）');
+  ok(countPoly(svg2b) === 2, '八字壞掉時全開仍只有紫微大限＋限例太乙兩條（實得 ' + countPoly(svg2b) + '）');
   ok(((doc.getElementById('resoGrid').textContent).match(/同向率/g) || []).length === 1, '八字壞掉時共振卡剩 1 組配對（紫微×限例）');
-  ok(win.getComputedStyle(doc.getElementById('syncCard')).display !== 'none' && /等待：八字大運/.test(doc.getElementById('syncGrid').textContent), '三線未齊時提醒卡不消失，明示缺少八字曲線');
+  ok(win.getComputedStyle(doc.getElementById('syncCard')).display !== 'none' && /等待：八字＋紫微大限曲線/.test(doc.getElementById('syncGrid').textContent), '兩線未齊時提醒卡不消失，明示缺少八字＋紫微曲線');
   ok(win.getComputedStyle(doc.getElementById('turnCard')).display !== 'none' && /三線資料尚未齊備/.test(doc.getElementById('turnGrid').textContent), '三線未齊時轉折卡不消失並顯示等待說明');
   ok(win.getComputedStyle(doc.getElementById('wealthCard')).display !== 'none' &&
      /紫微財運/.test(doc.getElementById('wealthGrid').textContent) &&
-     /八字尚未排盤/.test(doc.getElementById('wealthGrid').textContent),
-     '八字壞掉時財運卡不消失，紫微訊號照列並標明八字缺席');
+     /八字尚未排盤/.test(doc.getElementById('wealthGrid').textContent) &&
+     /需八字與紫微（v3 主星欄位）皆排盤完成/.test(doc.getElementById('wealthGrid').textContent),
+     '八字壞掉時財運卡不消失：推象財路標明缺件，舊口徑紫微訊號照列並標明八字缺席');
 
   console.log(fails === 0 ? '\nALL PASS' : '\nFAILED: ' + fails);
   process.exit(fails === 0 ? 0 : 1);

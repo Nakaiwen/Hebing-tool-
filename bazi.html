@@ -4846,6 +4846,9 @@ function downloadJson() {
         specialPatternDecision: chart.strength.details&&chart.strength.details.specialPatternDecision ? JSON.parse(JSON.stringify(chart.strength.details.specialPatternDecision)) : null
       } : null,
       wealthSignals: baziWealthSignals(chart, cycle, ys, annual),
+      /* v0.9.30：日主明列（五行主線用；v2 只能繞 wealthSignals.luShen.dayStem 取） */
+      dayMaster: (function(){ var g=chart.pillars.dayPillar.charAt(0); var gi='甲乙丙丁戊己庚辛壬癸'.indexOf(g);
+                   return { gan:g, element:BaziEngine.getElementOf(g), yinYang: gi%2===0?'陽':'陰' }; })(),
       startAge: cycle.startAge,
       curGz: curGz,
       pillars: cycle.pillars.map(function(pl){

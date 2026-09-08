@@ -13,8 +13,12 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
   for(let n=0;n<100;n++){await pause(100);if(['fr-bazi','fr-ziwei','fr-taiyi'].every(id=>$(id).contentDocument.readyState==='complete'))break;}
   for(const [id,v] of Object.entries({'f-name':'介面測試','f-year':'1990','f-month':'1','f-day':'15','f-hour':'6'}))$(id).value=v;
   $('f-go').click();
-  for(let n=0;n<200;n++){await pause(100);if(d.querySelectorAll('#ovChart polyline').length===3&&!$('f-save').disabled)break;}
-  assert.equal(d.querySelectorAll('#ovChart polyline').length,3);
+  for(let n=0;n<200;n++){await pause(100);if(d.querySelectorAll('#ovChart polyline').length===2&&!$('f-save').disabled&&/限例太乙（十二宮歲段/.test($('ovLegend').textContent))break;}
+  /* v0.9.34 預設：八字＋紫微（五行主線曲線）＋太乙 兩條；八字、紫微單線預設關閉 */
+  assert.equal(d.querySelectorAll('#ovChart polyline').length,2);
+  assert.deepEqual([...d.querySelectorAll('[data-method]')].map(c=>c.dataset.method+'='+c.checked),['bazi=false','ziwei=false','hebing=true','taiyi=true']);
+  [...d.querySelectorAll('[data-method]')].forEach(c=>{if(!c.checked)c.click();});
+  assert.equal(d.querySelectorAll('#ovChart polyline').length,4);
   assert.equal(d.querySelectorAll('.readout').length,3);
   for(const k of ['bazi','ziwei','taiyi'])assert.ok(d.querySelector('.readout.'+k).textContent.includes('分'));
   for(const id of ['fr-bazi','fr-ziwei']){
@@ -45,13 +49,15 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
   $('viewFrom').value='2035';$('viewTo').value='2028';$('applyRange').click();
   assert.equal(d.querySelector('#ovChart svg').dataset.x0,'2028');
   const checks=[...d.querySelectorAll('[data-method]')];checks[0].click();
-  assert.equal(d.querySelectorAll('#ovChart polyline').length,2);
+  assert.equal(d.querySelectorAll('#ovChart polyline').length,3);
   assert.equal(snapshot(),initial);
   assert.equal(d.querySelectorAll('.readout').length,3);
   checks[1].click();checks[2].click();
   assert.equal(d.querySelectorAll('[data-method]:checked').length,1);
   assert.equal(d.querySelectorAll('#ovChart polyline').length,1);
-  checks[0].click();checks[1].click();
+  checks[3].click();
+  assert.equal(d.querySelectorAll('[data-method]:checked').length,1);
+  checks[0].click();checks[1].click();checks[2].click();
   $('viewBounds').click();$('viewMarks').click();
   assert.equal(snapshot(),initial);
   assert.ok(![...d.querySelectorAll('#ovChart text')].some(e=>e.textContent==='26.6歲'));
@@ -67,8 +73,9 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
   assert.match($('ovTitle').textContent,/流年/);
   assert.match(d.querySelector('#ovChart svg').getAttribute('aria-label'),/流年/);
   assert.equal(snapshot(),initial);
-  assert.equal(d.querySelectorAll('.metric-grid').length,4);
-  assert.equal(d.querySelectorAll('.timing-grid').length,4);
+  /* v0.9.35：轉折卡每層只剩「太乙 × 八字＋紫微」一組 */
+  assert.equal(d.querySelectorAll('.metric-grid').length,2);
+  assert.equal(d.querySelectorAll('.timing-grid').length,2);
   // Verify PDF captures all curves/full range, then restores current viewing state.
   checks[0].click();
   const beforeSvg=$('ovChart').innerHTML,beforeYear=$('viewYear').value,images=[];
@@ -80,7 +87,7 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
   w.jspdf={jsPDF:Pdf};
   const result=await $('ovPdf').onclick();assert.ok(result);
   assert.ok(images.length>=2);
-  for(const xml of images){assert.equal((xml.match(/<polyline/g)||[]).length,3);assert.ok(!xml.includes('id="ovSelection"'));const parsed=new w.DOMParser().parseFromString(xml.slice(xml.indexOf(',')+1),'image/svg+xml');assert.equal(parsed.getElementsByTagName('parsererror').length,0);}
+  for(const xml of images){assert.equal((xml.match(/<polyline/g)||[]).length,4);assert.ok(!xml.includes('id="ovSelection"'));const parsed=new w.DOMParser().parseFromString(xml.slice(xml.indexOf(',')+1),'image/svg+xml');assert.equal(parsed.getElementsByTagName('parsererror').length,0);}
   assert.equal($('ovChart').innerHTML,beforeSvg);assert.equal($('viewYear').value,beforeYear);
   assert.equal(snapshot(),initial);
   assert.deepEqual(errors,[]);
