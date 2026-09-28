@@ -222,19 +222,44 @@ for (const c of CASES) {
   ok(h.maybeWeak.s.details.congGe.status === '疑似從格' && h.maybeWeak.s.level === '身弱' &&
      h.maybeWeak.y.decision.activeRule === '正格' && h.maybeWeak.y.alternative && h.maybeWeak.y.alternative.decision.affectsCurve === false,
     '極弱但仍有一處孤援時列疑似從弱，主曲線維持正格並保存順勢備選');
-  ok(h.clearStrong.s.details.congGe.status === '明確從格' && h.clearStrong.s.level === '從強' &&
-     h.clearStrong.y.method === '從強格順勢',
-    '滿盤生扶、敵方為零時判明確從強');
-  ok(h.maybeStrong.s.details.congGe.status === '疑似從格' && h.maybeStrong.s.level === '身強' &&
-     h.maybeStrong.y.alternatives.some(x => /疑似從強格/.test(x.method)),
-    '生扶成勢但尚有一處逆勢時列疑似從強，不直接翻轉曲線');
+  ok(h.clearStrong.s.details.congGe.status === '正格' && h.clearStrong.s.details.zhuanWang.status === '明確專旺' &&
+     h.clearStrong.s.details.zhuanWang.subtype === '專旺我' && h.clearStrong.s.level === '專旺我' &&
+     h.clearStrong.y.method === '專旺我順勢' && h.clearStrong.y.favorable.join() === '木,水',
+    '滿盤生扶、敵方為零時判明確專旺我（師承 2026-09-28：印生我屬我方，不作從格；喜忌沿用印比喜）');
+  ok(h.maybeStrong.s.details.congGe.status === '正格' && h.maybeStrong.s.details.zhuanWang.status === '疑似專旺' &&
+     h.maybeStrong.s.details.zhuanWang.subtype === '專旺我' && h.maybeStrong.s.level === '身強' &&
+     h.maybeStrong.y.alternatives.some(x => /疑似專旺我/.test(x.method)),
+    '生扶成勢但尚有一處逆勢時列疑似專旺我，不直接翻轉曲線');
   ok(h.regular.s.details.congGe.status === '正格' && !h.regular.y.alternative,
     '未達極端失衡、月令與孤援門檻時維持正格');
   const weakAlt=h.maybeWeak.y.alternatives.find(x=>/從兒格/.test(x.method));
-  const strongAlt=h.maybeStrong.y.alternatives.find(x=>/從強格/.test(x.method));
+  const strongAlt=h.maybeStrong.y.alternatives.find(x=>/專旺我/.test(x.method));
   ok(weakAlt && strongAlt && h.maybeWeak.y.favorable.join() !== weakAlt.favorable.join() &&
      h.maybeStrong.y.favorable.join() !== strongAlt.favorable.join(),
     '疑似從格同時保留正格與順勢兩套不同喜忌，只有正格組參與目前計分');
+  {
+    const cai={yearPillar:'戊戌',monthPillar:'己未',dayPillar:'辛丑',hourPillar:'乙未'};
+    const hc=assess(HtmlEngine,cai), nc=assess(NodeBaziEngine,cai);
+    ok(JSON.stringify(hc)===JSON.stringify(nc) && hc.s.details.congGe.caiBlocksZhuanWang && hc.s.details.congGe.caiBlocksZhuanWang.surviving &&
+       hc.s.details.zhuanWang.status==='正格' && !(hc.y.alternatives||[]).length && hc.y.favorable.includes('木'),
+      '滿盤印比而財存活（未合未沖）→ 正格病藥喜財，不列專旺我候選（師承 2026-09-28）');
+  }
+  {
+    const bm={yearPillar:'己巳',monthPillar:'丁丑',dayPillar:'戊午',hourPillar:'壬戌'};
+    const hb=assess(HtmlEngine,bm), nb=assess(NodeBaziEngine,bm);
+    ok(JSON.stringify(hb)===JSON.stringify(nb) && hb.s.details.congGe.caiBlocksZhuanWang && hb.s.details.congGe.caiBlocksZhuanWang.surviving &&
+       !hb.y.favorable.includes('水') && !hb.y.unfavorable.includes('水') && hb.y.favorable.includes('木') && hb.y.favorable.includes('金'),
+      '比劫最旺而財存活 → 病藥取官殺與食傷，財為閒神，不強制喜財（師承 2026-09-28）');
+  }
+  {
+    const T={bridged:{yearPillar:'癸酉',monthPillar:'庚申',dayPillar:'辛酉',hourPillar:'庚寅'},
+             bare:{yearPillar:'戊寅',monthPillar:'乙卯',dayPillar:'甲寅',hourPillar:'乙亥'},
+             over:{yearPillar:'己巳',monthPillar:'丁丑',dayPillar:'戊午',hourPillar:'壬子'}};
+    const r={}; Object.keys(T).forEach(k=>{ r[k]=assess(HtmlEngine,T[k]); ok(JSON.stringify(r[k])===JSON.stringify(assess(NodeBaziEngine,T[k])),'千里規則樣本 '+k+'：內嵌與 Node 同源'); });
+    ok(r.bridged.s.details.zhuanWang.status==='明確專旺','一行型見財有食傷引通 → 明確專旺（千里）');
+    ok(r.bare.s.details.zhuanWang.status==='疑似專旺' && r.bare.y.decision.activeRule==='正格','一行型見財無食傷 → 疑似，主曲線回正格（千里）');
+    ok(r.over.s.details.congGe.caiBlocksZhuanWang && r.over.y.decision.activeRule==='正格','結算歸零而財存活 → 不作明確專旺我');
+  }
 
   const zwNames={curve:'曲直格',flame:'炎上格',earth:'稼穡格',metal:'從革格',water:'潤下格'};
   ok(Object.keys(zwNames).every(k => h[k].s.details.zhuanWang.status === '明確專旺' &&

@@ -1,0 +1,454 @@
+diff --git a/bazi-engine.js b/bazi-engine.js
+index 10fde4e..aafe082 100644
+--- a/bazi-engine.js
++++ b/bazi-engine.js
+@@ -628,6 +628,24 @@
+ 
+     // 從格三級偵測：正格／疑似從格／明確從格。
+     // 疑似從格只保存順勢喜忌備選，不直接翻轉主曲線；只有明確從格才正式順勢取用。
++    // 財是否存活（師承 2026-09-28）：
++    //   地支財以前置結算後的 byElement 為準（被沖折損、合化轉出後歸零即不存活）；
++    //   天干財不進前置結算，另判：與相鄰天干五合者視為被合化（TODO_NAKAI：天干合化是否另需化神條件）。
++    function _survivingCai(pillars, dayEl, byElement) {
++        const caiEl = ELEMENT_OVERCOMES[dayEl];
++        const S = [pillars.yearPillar.charAt(0), pillars.monthPillar.charAt(0), pillars.dayPillar.charAt(0), pillars.hourPillar.charAt(0)];
++        const ROLE = ['年干', '月干', '日干', '時干'], ADJ = { 0: [1], 1: [0, 2], 3: [2] };
++        const stemCai = [0, 1, 3].filter(i => getElementOf(S[i]) === caiEl);
++        const combined = stemCai.filter(i => ADJ[i].some(j => STEM_INTERACTIONS[S[i]] && STEM_INTERACTIONS[S[i]].combinesWith === S[j]));
++        const branchCai = Math.max(0, (byElement[caiEl] || 0) - stemCai.length);
++        const liveStems = stemCai.filter(i => combined.indexOf(i) === -1);
++        return {
++            caiEl: caiEl, surviving: liveStems.length > 0 || branchCai > 0,
++            liveStems: liveStems.map(i => ROLE[i] + S[i]), combinedStems: combined.map(i => ROLE[i] + S[i]),
++            branchScoreAfterSettlement: branchCai
++        };
++    }
++
+     function _detectCongGe(pillars, dayEl, selfScore, foeScore, byElement) {
+         const branchRoles = [
+             { role:'年', branch:pillars.yearPillar.charAt(1), weight:1 },
+@@ -697,17 +715,43 @@
+                 ['敵方占 '+Math.round(weakDominance*100)+'%','月令無有效印比根','生扶總量僅 '+selfScore+' 分'],counter,
+                 '敵方已成明顯主勢，但仍留一處孤援，列為疑似'+weakPattern+'；主曲線暫按正格，另存順勢喜忌備選。');
+         }
+-        if (foeScore === 0) {
+-            return result('明確從格','從強','從強格',
+-                ['全局敵方為 0 分','生扶占 100%','無財官食傷逆勢'],[],
+-                '滿盤生扶且完全無逆勢，判為明確從強格；正式順我方之勢取用。');
++        // ★師承 2026-09-28：印生我、屬我方；滿盤我方（比劫＋印）不作從格，改歸專旺家族「專旺我」。
++        //   門檻沿用原「從強」口徑不變；喜忌亦沿用（印比喜，食傷財官殺忌）。財、食傷可否容許 TODO_NAKAI。
++        //   此處只產出判定資料，交由 _detectZhuanWang 併入專旺格。
++        let yinBi = null;
++        if (foeScore === 0 && _survivingCai(pillars, dayEl, byElement).surviving) {
++            // ★師承 2026-09-28：財存活即不作專旺我（防結算重複折損使敵方總分歸零而財仍在）
++            const cai = _survivingCai(pillars, dayEl, byElement);
++            return Object.assign(result('正格',null,null,
++                ['我方（比劫＋印）成勢，但財「'+cai.caiEl+'」未被合化、未被沖掉'],[],
++                '比劫與印成勢而財仍存活；依師承不列專旺我或從格，維持正格病藥。'),
++                {caiBlocksZhuanWang:cai});
+         }
+-        if (foeScore <= STRENGTH_CONFIG.congCandidateMaxMinority && strongDominance >= STRENGTH_CONFIG.congCandidateMinDominance &&
++        if (foeScore === 0) {
++            yinBi = {status:'明確專旺',
++                evidence:['全局敵方為 0 分','生扶占 100%','無財官食傷逆勢'],counterEvidence:[],
++                summary:'滿盤比劫與印、完全無逆勢；印生我屬我方，依師承不作從格，判為明確專旺我，順我方之勢取用。'};
++        } else if (foeScore <= STRENGTH_CONFIG.congCandidateMaxMinority && strongDominance >= STRENGTH_CONFIG.congCandidateMinDominance &&
++            !branchFoes.some(x => x.role==='月') && foeUnits <= 1 && _survivingCai(pillars, dayEl, byElement).surviving) {
++            // ★師承 2026-09-28：我方滿盤而財仍存活（未被合化、未被沖掉）→ 不是專旺格也不是從格，回正格病藥（喜財）
++            const cai = _survivingCai(pillars, dayEl, byElement);
++            return Object.assign(result('正格',null,null,
++                ['我方（比劫＋印）成勢，但財「'+cai.caiEl+'」未被合化、未被沖掉'],[],
++                '比劫與印成勢而財仍存活；依師承不列專旺我或從格，維持正格，以病藥取財為用。'),
++                {caiBlocksZhuanWang:cai});
++        } else if (foeScore <= STRENGTH_CONFIG.congCandidateMaxMinority && strongDominance >= STRENGTH_CONFIG.congCandidateMinDominance &&
+             !branchFoes.some(x => x.role==='月') && foeUnits <= 1) {
+-            return result('疑似從格','從強','從強格',
+-                ['生扶占 '+Math.round(strongDominance*100)+'%','月令不屬逆勢','逆勢總量僅 '+foeScore+' 分'],
+-                ['仍有孤立逆勢：'+stemFoes.concat(branchFoes.map(x=>x.role+'支'+x.branch)).join('、')],
+-                '生扶已成明顯主勢，但仍見一處孤立逆勢，列為疑似從強格；主曲線暫按正格，另存順勢喜忌備選。');
++            yinBi = {status:'疑似專旺',
++                evidence:['生扶占 '+Math.round(strongDominance*100)+'%','月令不屬逆勢','逆勢總量僅 '+foeScore+' 分'],
++                counterEvidence:['仍有孤立逆勢：'+stemFoes.concat(branchFoes.map(x=>x.role+'支'+x.branch)).join('、')],
++                summary:'比劫與印已成明顯主勢，但仍見一處孤立逆勢，列為疑似專旺我；主曲線暫按正格，另存順勢喜忌備選。'};
++        }
++        if (yinBi) {
++            return Object.assign(result('正格',null,null,
++                ['我方（比劫＋印）成勢，屬專旺我範疇，不列從格'],[],
++                '生扶一方成勢；依師承（印生我屬我方）歸專旺格判定，不作從格。'),
++                {yinBiZhuanWang:Object.assign({type:'專旺',subtype:'專旺我',pattern:'專旺我',element:dayEl,
++                    dominanceRatio:Math.round(strongDominance*1000)/1000,selfScore:selfScore,foeScore:foeScore},yinBi)});
+         }
+         return result('正格',null,null,
+             ['未同時通過從格的極端失衡、月令與孤援條件'],[],
+@@ -715,7 +759,18 @@
+     }
+ 
+     // 專旺五格：日主本行取得月令與地支主勢，官殺不成氣候；疑似格只留備選喜忌。
+-    function _detectZhuanWang(pillars, dayEl, byElement) {
++    function _detectZhuanWang(pillars, dayEl, byElement, cong) {
++        const oneLine=_detectZhuanWangOneLine(pillars, dayEl, byElement);
++        const variants=[oneLine];
++        const yb=cong&&cong.yinBiZhuanWang;
++        if(yb) variants.push(Object.assign({active:yb.status==='明確專旺'},yb));
++        const rank=x=>x.status==='明確專旺'?2:(x.status==='疑似專旺'?1:0);
++        const primary=variants.reduce((a,b)=>rank(b)>rank(a)?b:a); // 同級時一行型優先
++        return Object.assign({},primary,{subtype:primary.subtype||'一行型',variants:variants});
++    }
++
++    // 一行型專旺五格（原 _detectZhuanWang 本體，未改）
++    function _detectZhuanWangOneLine(pillars, dayEl, byElement) {
+         const pattern=ZHUAN_WANG_NAMES[dayEl];
+         const monthBranch=pillars.monthPillar.charAt(1), monthEl=getElementOf(monthBranch);
+         const branches=[pillars.yearPillar.charAt(1),monthBranch,pillars.dayPillar.charAt(1),pillars.hourPillar.charAt(1)];
+@@ -727,12 +782,22 @@
+         const dominant=_ALL_EL.slice().sort((a,b)=>(byElement[b]||0)-(byElement[a]||0))[0];
+         const monthSame=monthEl===dayEl, monthSupports=monthSame||monthEl===_generatorOf(dayEl);
+         const evidence=['日主本行占 '+Math.round(ratio*100)+'%','同氣地支權重 '+branchWeight+'/5','官殺「'+officerEl+'」'+officerScore+' 分'];
+-        const common={type:'專旺',pattern:pattern,element:dayEl,dominanceRatio:Math.round(ratio*1000)/1000,
++        const common={type:'專旺',subtype:'一行型',pattern:pattern,element:dayEl,dominanceRatio:Math.round(ratio*1000)/1000,
+             branchWeight:branchWeight,monthElement:monthEl,officerElement:officerEl,officerScore:officerScore,
+             thresholds:{clearRatio:0.8,candidateRatio:0.6,clearBranchWeight:4,candidateBranchWeight:3}};
+         function result(status,counter,summary){return Object.assign({},common,{status:status,active:status==='明確專旺',evidence:evidence,counterEvidence:counter||[],summary:summary});}
+-        if(ratio>=0.8&&monthSame&&branchWeight>=4&&officerScore===0){
+-            return result('明確專旺',[],pattern+'本行得月令、根氣集中且官殺全無，正式依專旺順勢取用。');
++        // ★師承 2026-09-28（依千里命稿外格篇）：一行型逢財，有食傷則不妨；見存活之財而無食傷引通 → 降為疑似。
++        const caiLive=_survivingCai(pillars, dayEl, byElement);
++        const shiShangEl=ELEMENT_GENERATES[dayEl], shiShangScore=byElement[shiShangEl]||0;
++        const caiUnbridged=caiLive.surviving&&shiShangScore<=0;
++        if(ratio>=0.8&&monthSame&&branchWeight>=4&&officerScore===0&&!caiUnbridged){
++            return result('明確專旺',[],pattern+'本行得月令、根氣集中且官殺全無，正式依專旺順勢取用。'+
++                (caiLive.surviving?'盤中見財，有食傷「'+shiShangEl+'」引通（千里：逢財有食傷則不妨）。':''));
++        }
++        if(ratio>=0.8&&monthSame&&branchWeight>=4&&officerScore===0&&caiUnbridged){
++            return Object.assign(result('疑似專旺',['見財「'+caiLive.caiEl+'」而無食傷「'+shiShangEl+'」引通（千里：逢財有食傷則不妨）'],
++                pattern+'本行成勢且官殺全無，但財存活而無食傷引通；依千里降為疑似，主曲線按正格，另存專旺喜忌備選。'),
++                {caiUnbridged:{caiEl:caiLive.caiEl,shiShangEl:shiShangEl,liveStems:caiLive.liveStems,branchScoreAfterSettlement:caiLive.branchScoreAfterSettlement}});
+         }
+         if(ratio>=0.6&&dominant===dayEl&&monthSupports&&branchWeight>=3&&officerScore<=1){
+             const counter=[];
+@@ -1201,7 +1266,7 @@
+         });
+ 
+         const cong = _detectCongGe(pillars, dayEl, selfScore, foeScore, byElement);
+-        const zhuanWang = _detectZhuanWang(pillars, dayEl, byElement);
++        const zhuanWang = _detectZhuanWang(pillars, dayEl, byElement, cong);
+         const huaQi = _detectHuaQi(pillars, dayEl, byElement);
+         const monthPattern = _detectMonthPattern(pillars);
+         const regularMonthPattern = _detectRegularMonthPattern(pillars, selfScore, foeScore, monthPattern);
+@@ -1313,23 +1378,25 @@
+             r.decision={activeRule:isAlternative?'從格備選':'明確從格',congStatus:cong.status,affectsCurve:!isAlternative};
+             return r;
+         }
+-        function followStrongPack(isAlternative) {
+-            const fav=_uniq([dayEl,_generatorOf(dayEl)]);
+-            const unfav=_ALL_EL.filter(e => fav.indexOf(e)===-1);
+-            const r=pack((isAlternative?'疑似':'')+'從強格順勢'+(isAlternative?'（備選）':''),fav,unfav,
+-                (isAlternative?'疑似':'明確')+'從強格：順印比「'+fav.join('、')+'」，逆勢的食傷、財與官殺列忌。'+
+-                (isAlternative?' 此組只供人生應證比較，目前不參與大運與流年曲線計分。':''));
+-            r.decision={activeRule:isAlternative?'從格備選':'明確從格',congStatus:cong.status,affectsCurve:!isAlternative};
+-            return r;
+-        }
+-        function zhuanWangPack(isAlternative) {
+-            const el=zhuanWang.element||dayEl;
++        function zhuanWangPack(isAlternative, variant) {
++            const zw=variant||zhuanWang;
++            if(zw.subtype==='專旺我'){
++                // 專旺我：沿用原從強喜忌口徑（印比喜；食傷、財、官殺忌），財與食傷可否容許 TODO_NAKAI
++                const fav=_uniq([dayEl,_generatorOf(dayEl)]);
++                const unfav=_ALL_EL.filter(e => fav.indexOf(e)===-1);
++                const r=pack((isAlternative?'疑似':'')+'專旺我順勢'+(isAlternative?'（備選）':''),fav,unfav,
++                    (isAlternative?'疑似':'明確')+'專旺我：印生我、屬我方，順印比「'+fav.join('、')+'」；逆勢的食傷、財與官殺列忌。'+
++                    (isAlternative?' 此組只供人生應證比較，目前不參與大運與流年曲線計分。':''));
++                r.decision={activeRule:isAlternative?'專旺備選':'明確專旺',pattern:'專旺我',subtype:'專旺我',affectsCurve:!isAlternative};
++                return r;
++            }
++            const el=zw.element||dayEl;
+             const fav=_uniq([el,_generatorOf(el),ELEMENT_GENERATES[el]]);
+             const unfav=_uniq([_overcomerOf(el)]);
+-            const r=pack((isAlternative?'疑似':'')+(zhuanWang.pattern||ZHUAN_WANG_NAMES[el])+'順勢'+(isAlternative?'（備選）':''),fav,unfav,
+-                (isAlternative?'疑似':'明確')+(zhuanWang.pattern||ZHUAN_WANG_NAMES[el])+'：喜本行、印生與食傷洩秀，忌官殺「'+unfav.join('、')+'」逆制。'+
++            const r=pack((isAlternative?'疑似':'')+(zw.pattern||ZHUAN_WANG_NAMES[el])+'順勢'+(isAlternative?'（備選）':''),fav,unfav,
++                (isAlternative?'疑似':'明確')+(zw.pattern||ZHUAN_WANG_NAMES[el])+'：喜本行、印生與食傷洩秀，忌官殺「'+unfav.join('、')+'」逆制。'+
+                 (isAlternative?' 此組只供人生應證比較，目前不參與大運與流年曲線計分。':''));
+-            r.decision={activeRule:isAlternative?'專旺備選':'明確專旺',pattern:zhuanWang.pattern,affectsCurve:!isAlternative};
++            r.decision={activeRule:isAlternative?'專旺備選':'明確專旺',pattern:zw.pattern,subtype:'一行型',affectsCurve:!isAlternative};
+             return r;
+         }
+         function huaQiPack(isAlternative) {
+@@ -1345,10 +1412,10 @@
+         function finalizeSpecialDecision(main,activeRule) {
+             const alternatives=[];
+             if(huaQi.status==='疑似化氣') alternatives.push(huaQiPack(true));
+-            if(zhuanWang.status==='疑似專旺') alternatives.push(zhuanWangPack(true));
+-            if(cong.status==='疑似從格') alternatives.push(cong.type==='從強'?followStrongPack(true):followWeakPack(true));
++            (zhuanWang.variants||[zhuanWang]).forEach(v=>{ if(v.status==='疑似專旺') alternatives.push(zhuanWangPack(true,v)); });
++            if(cong.status==='疑似從格') alternatives.push(followWeakPack(true));
+             main.decision={activeRule:activeRule||'正格',affectsCurve:true,congStatus:cong.status||'正格',
+-                zhuanWangStatus:zhuanWang.status||'正格',huaQiStatus:huaQi.status||'正格',monthPattern:monthPattern.type||null,
++                zhuanWangStatus:zhuanWang.status||'正格',zhuanWangSubtype:zhuanWang.subtype||null,huaQiStatus:huaQi.status||'正格',monthPattern:monthPattern.type||null,
+                 regularMonthPattern:regularMonthPattern.pattern||null,regularMonthVerdict:regularMonthPattern.verdict||null,
+                 classicalOuterPatterns:classicalOuterPatterns.map(x=>x.name),interpretivePatternsAffectCurve:false};
+             if(alternatives.length){
+@@ -1363,7 +1430,6 @@
+         if(specialDecision.active&&specialDecision.active.family==='化氣格') return finalizeSpecialDecision(huaQiPack(false),'明確化氣格');
+         if(specialDecision.active&&specialDecision.active.family==='專旺格') return finalizeSpecialDecision(zhuanWangPack(false),'明確專旺格');
+         if(specialDecision.active&&specialDecision.active.family==='從格'&&strength.level==='從弱') return finalizeSpecialDecision(followWeakPack(false),'明確從格');
+-        if(specialDecision.active&&specialDecision.active.family==='從格'&&strength.level==='從強') return finalizeSpecialDecision(followStrongPack(false),'明確從格');
+ 
+         // ── 第 1 層：調候閘門（閘一：冬夏月　閘二：藏干計入、沖合作廢後仍缺）──
+         const mb = pillars.monthPillar.charAt(1);
+diff --git a/bazi.html b/bazi.html
+index 7429bfb..337f81d 100644
+--- a/bazi.html
++++ b/bazi.html
+@@ -1970,6 +1970,24 @@ button {
+ 
+     // 從格三級偵測：正格／疑似從格／明確從格。
+     // 疑似從格只保存順勢喜忌備選，不直接翻轉主曲線；只有明確從格才正式順勢取用。
++    // 財是否存活（師承 2026-09-28）：
++    //   地支財以前置結算後的 byElement 為準（被沖折損、合化轉出後歸零即不存活）；
++    //   天干財不進前置結算，另判：與相鄰天干五合者視為被合化（TODO_NAKAI：天干合化是否另需化神條件）。
++    function _survivingCai(pillars, dayEl, byElement) {
++        const caiEl = ELEMENT_OVERCOMES[dayEl];
++        const S = [pillars.yearPillar.charAt(0), pillars.monthPillar.charAt(0), pillars.dayPillar.charAt(0), pillars.hourPillar.charAt(0)];
++        const ROLE = ['年干', '月干', '日干', '時干'], ADJ = { 0: [1], 1: [0, 2], 3: [2] };
++        const stemCai = [0, 1, 3].filter(i => getElementOf(S[i]) === caiEl);
++        const combined = stemCai.filter(i => ADJ[i].some(j => STEM_INTERACTIONS[S[i]] && STEM_INTERACTIONS[S[i]].combinesWith === S[j]));
++        const branchCai = Math.max(0, (byElement[caiEl] || 0) - stemCai.length);
++        const liveStems = stemCai.filter(i => combined.indexOf(i) === -1);
++        return {
++            caiEl: caiEl, surviving: liveStems.length > 0 || branchCai > 0,
++            liveStems: liveStems.map(i => ROLE[i] + S[i]), combinedStems: combined.map(i => ROLE[i] + S[i]),
++            branchScoreAfterSettlement: branchCai
++        };
++    }
++
+     function _detectCongGe(pillars, dayEl, selfScore, foeScore, byElement) {
+         const branchRoles = [
+             { role:'年', branch:pillars.yearPillar.charAt(1), weight:1 },
+@@ -2039,17 +2057,43 @@ button {
+                 ['敵方占 '+Math.round(weakDominance*100)+'%','月令無有效印比根','生扶總量僅 '+selfScore+' 分'],counter,
+                 '敵方已成明顯主勢，但仍留一處孤援，列為疑似'+weakPattern+'；主曲線暫按正格，另存順勢喜忌備選。');
+         }
+-        if (foeScore === 0) {
+-            return result('明確從格','從強','從強格',
+-                ['全局敵方為 0 分','生扶占 100%','無財官食傷逆勢'],[],
+-                '滿盤生扶且完全無逆勢，判為明確從強格；正式順我方之勢取用。');
++        // ★師承 2026-09-28：印生我、屬我方；滿盤我方（比劫＋印）不作從格，改歸專旺家族「專旺我」。
++        //   門檻沿用原「從強」口徑不變；喜忌亦沿用（印比喜，食傷財官殺忌）。財、食傷可否容許 TODO_NAKAI。
++        //   此處只產出判定資料，交由 _detectZhuanWang 併入專旺格。
++        let yinBi = null;
++        if (foeScore === 0 && _survivingCai(pillars, dayEl, byElement).surviving) {
++            // ★師承 2026-09-28：財存活即不作專旺我（防結算重複折損使敵方總分歸零而財仍在）
++            const cai = _survivingCai(pillars, dayEl, byElement);
++            return Object.assign(result('正格',null,null,
++                ['我方（比劫＋印）成勢，但財「'+cai.caiEl+'」未被合化、未被沖掉'],[],
++                '比劫與印成勢而財仍存活；依師承不列專旺我或從格，維持正格病藥。'),
++                {caiBlocksZhuanWang:cai});
+         }
+-        if (foeScore <= STRENGTH_CONFIG.congCandidateMaxMinority && strongDominance >= STRENGTH_CONFIG.congCandidateMinDominance &&
++        if (foeScore === 0) {
++            yinBi = {status:'明確專旺',
++                evidence:['全局敵方為 0 分','生扶占 100%','無財官食傷逆勢'],counterEvidence:[],
++                summary:'滿盤比劫與印、完全無逆勢；印生我屬我方，依師承不作從格，判為明確專旺我，順我方之勢取用。'};
++        } else if (foeScore <= STRENGTH_CONFIG.congCandidateMaxMinority && strongDominance >= STRENGTH_CONFIG.congCandidateMinDominance &&
++            !branchFoes.some(x => x.role==='月') && foeUnits <= 1 && _survivingCai(pillars, dayEl, byElement).surviving) {
++            // ★師承 2026-09-28：我方滿盤而財仍存活（未被合化、未被沖掉）→ 不是專旺格也不是從格，回正格病藥（喜財）
++            const cai = _survivingCai(pillars, dayEl, byElement);
++            return Object.assign(result('正格',null,null,
++                ['我方（比劫＋印）成勢，但財「'+cai.caiEl+'」未被合化、未被沖掉'],[],
++                '比劫與印成勢而財仍存活；依師承不列專旺我或從格，維持正格，以病藥取財為用。'),
++                {caiBlocksZhuanWang:cai});
++        } else if (foeScore <= STRENGTH_CONFIG.congCandidateMaxMinority && strongDominance >= STRENGTH_CONFIG.congCandidateMinDominance &&
+             !branchFoes.some(x => x.role==='月') && foeUnits <= 1) {
+-            return result('疑似從格','從強','從強格',
+-                ['生扶占 '+Math.round(strongDominance*100)+'%','月令不屬逆勢','逆勢總量僅 '+foeScore+' 分'],
+-                ['仍有孤立逆勢：'+stemFoes.concat(branchFoes.map(x=>x.role+'支'+x.branch)).join('、')],
+-                '生扶已成明顯主勢，但仍見一處孤立逆勢，列為疑似從強格；主曲線暫按正格，另存順勢喜忌備選。');
++            yinBi = {status:'疑似專旺',
++                evidence:['生扶占 '+Math.round(strongDominance*100)+'%','月令不屬逆勢','逆勢總量僅 '+foeScore+' 分'],
++                counterEvidence:['仍有孤立逆勢：'+stemFoes.concat(branchFoes.map(x=>x.role+'支'+x.branch)).join('、')],
++                summary:'比劫與印已成明顯主勢，但仍見一處孤立逆勢，列為疑似專旺我；主曲線暫按正格，另存順勢喜忌備選。'};
++        }
++        if (yinBi) {
++            return Object.assign(result('正格',null,null,
++                ['我方（比劫＋印）成勢，屬專旺我範疇，不列從格'],[],
++                '生扶一方成勢；依師承（印生我屬我方）歸專旺格判定，不作從格。'),
++                {yinBiZhuanWang:Object.assign({type:'專旺',subtype:'專旺我',pattern:'專旺我',element:dayEl,
++                    dominanceRatio:Math.round(strongDominance*1000)/1000,selfScore:selfScore,foeScore:foeScore},yinBi)});
+         }
+         return result('正格',null,null,
+             ['未同時通過從格的極端失衡、月令與孤援條件'],[],
+@@ -2057,7 +2101,18 @@ button {
+     }
+ 
+     // 專旺五格：日主本行取得月令與地支主勢，官殺不成氣候；疑似格只留備選喜忌。
+-    function _detectZhuanWang(pillars, dayEl, byElement) {
++    function _detectZhuanWang(pillars, dayEl, byElement, cong) {
++        const oneLine=_detectZhuanWangOneLine(pillars, dayEl, byElement);
++        const variants=[oneLine];
++        const yb=cong&&cong.yinBiZhuanWang;
++        if(yb) variants.push(Object.assign({active:yb.status==='明確專旺'},yb));
++        const rank=x=>x.status==='明確專旺'?2:(x.status==='疑似專旺'?1:0);
++        const primary=variants.reduce((a,b)=>rank(b)>rank(a)?b:a); // 同級時一行型優先
++        return Object.assign({},primary,{subtype:primary.subtype||'一行型',variants:variants});
++    }
++
++    // 一行型專旺五格（原 _detectZhuanWang 本體，未改）
++    function _detectZhuanWangOneLine(pillars, dayEl, byElement) {
+         const pattern=ZHUAN_WANG_NAMES[dayEl];
+         const monthBranch=pillars.monthPillar.charAt(1), monthEl=getElementOf(monthBranch);
+         const branches=[pillars.yearPillar.charAt(1),monthBranch,pillars.dayPillar.charAt(1),pillars.hourPillar.charAt(1)];
+@@ -2069,12 +2124,22 @@ button {
+         const dominant=_ALL_EL.slice().sort((a,b)=>(byElement[b]||0)-(byElement[a]||0))[0];
+         const monthSame=monthEl===dayEl, monthSupports=monthSame||monthEl===_generatorOf(dayEl);
+         const evidence=['日主本行占 '+Math.round(ratio*100)+'%','同氣地支權重 '+branchWeight+'/5','官殺「'+officerEl+'」'+officerScore+' 分'];
+-        const common={type:'專旺',pattern:pattern,element:dayEl,dominanceRatio:Math.round(ratio*1000)/1000,
++        const common={type:'專旺',subtype:'一行型',pattern:pattern,element:dayEl,dominanceRatio:Math.round(ratio*1000)/1000,
+             branchWeight:branchWeight,monthElement:monthEl,officerElement:officerEl,officerScore:officerScore,
+             thresholds:{clearRatio:0.8,candidateRatio:0.6,clearBranchWeight:4,candidateBranchWeight:3}};
+         function result(status,counter,summary){return Object.assign({},common,{status:status,active:status==='明確專旺',evidence:evidence,counterEvidence:counter||[],summary:summary});}
+-        if(ratio>=0.8&&monthSame&&branchWeight>=4&&officerScore===0){
+-            return result('明確專旺',[],pattern+'本行得月令、根氣集中且官殺全無，正式依專旺順勢取用。');
++        // ★師承 2026-09-28（依千里命稿外格篇）：一行型逢財，有食傷則不妨；見存活之財而無食傷引通 → 降為疑似。
++        const caiLive=_survivingCai(pillars, dayEl, byElement);
++        const shiShangEl=ELEMENT_GENERATES[dayEl], shiShangScore=byElement[shiShangEl]||0;
++        const caiUnbridged=caiLive.surviving&&shiShangScore<=0;
++        if(ratio>=0.8&&monthSame&&branchWeight>=4&&officerScore===0&&!caiUnbridged){
++            return result('明確專旺',[],pattern+'本行得月令、根氣集中且官殺全無，正式依專旺順勢取用。'+
++                (caiLive.surviving?'盤中見財，有食傷「'+shiShangEl+'」引通（千里：逢財有食傷則不妨）。':''));
++        }
++        if(ratio>=0.8&&monthSame&&branchWeight>=4&&officerScore===0&&caiUnbridged){
++            return Object.assign(result('疑似專旺',['見財「'+caiLive.caiEl+'」而無食傷「'+shiShangEl+'」引通（千里：逢財有食傷則不妨）'],
++                pattern+'本行成勢且官殺全無，但財存活而無食傷引通；依千里降為疑似，主曲線按正格，另存專旺喜忌備選。'),
++                {caiUnbridged:{caiEl:caiLive.caiEl,shiShangEl:shiShangEl,liveStems:caiLive.liveStems,branchScoreAfterSettlement:caiLive.branchScoreAfterSettlement}});
+         }
+         if(ratio>=0.6&&dominant===dayEl&&monthSupports&&branchWeight>=3&&officerScore<=1){
+             const counter=[];
+@@ -2543,7 +2608,7 @@ button {
+         });
+ 
+         const cong = _detectCongGe(pillars, dayEl, selfScore, foeScore, byElement);
+-        const zhuanWang = _detectZhuanWang(pillars, dayEl, byElement);
++        const zhuanWang = _detectZhuanWang(pillars, dayEl, byElement, cong);
+         const huaQi = _detectHuaQi(pillars, dayEl, byElement);
+         const monthPattern = _detectMonthPattern(pillars);
+         const regularMonthPattern = _detectRegularMonthPattern(pillars, selfScore, foeScore, monthPattern);
+@@ -2655,23 +2720,25 @@ button {
+             r.decision={activeRule:isAlternative?'從格備選':'明確從格',congStatus:cong.status,affectsCurve:!isAlternative};
+             return r;
+         }
+-        function followStrongPack(isAlternative) {
+-            const fav=_uniq([dayEl,_generatorOf(dayEl)]);
+-            const unfav=_ALL_EL.filter(e => fav.indexOf(e)===-1);
+-            const r=pack((isAlternative?'疑似':'')+'從強格順勢'+(isAlternative?'（備選）':''),fav,unfav,
+-                (isAlternative?'疑似':'明確')+'從強格：順印比「'+fav.join('、')+'」，逆勢的食傷、財與官殺列忌。'+
+-                (isAlternative?' 此組只供人生應證比較，目前不參與大運與流年曲線計分。':''));
+-            r.decision={activeRule:isAlternative?'從格備選':'明確從格',congStatus:cong.status,affectsCurve:!isAlternative};
+-            return r;
+-        }
+-        function zhuanWangPack(isAlternative) {
+-            const el=zhuanWang.element||dayEl;
++        function zhuanWangPack(isAlternative, variant) {
++            const zw=variant||zhuanWang;
++            if(zw.subtype==='專旺我'){
++                // 專旺我：沿用原從強喜忌口徑（印比喜；食傷、財、官殺忌），財與食傷可否容許 TODO_NAKAI
++                const fav=_uniq([dayEl,_generatorOf(dayEl)]);
++                const unfav=_ALL_EL.filter(e => fav.indexOf(e)===-1);
++                const r=pack((isAlternative?'疑似':'')+'專旺我順勢'+(isAlternative?'（備選）':''),fav,unfav,
++                    (isAlternative?'疑似':'明確')+'專旺我：印生我、屬我方，順印比「'+fav.join('、')+'」；逆勢的食傷、財與官殺列忌。'+
++                    (isAlternative?' 此組只供人生應證比較，目前不參與大運與流年曲線計分。':''));
++                r.decision={activeRule:isAlternative?'專旺備選':'明確專旺',pattern:'專旺我',subtype:'專旺我',affectsCurve:!isAlternative};
++                return r;
++            }
++            const el=zw.element||dayEl;
+             const fav=_uniq([el,_generatorOf(el),ELEMENT_GENERATES[el]]);
+             const unfav=_uniq([_overcomerOf(el)]);
+-            const r=pack((isAlternative?'疑似':'')+(zhuanWang.pattern||ZHUAN_WANG_NAMES[el])+'順勢'+(isAlternative?'（備選）':''),fav,unfav,
+-                (isAlternative?'疑似':'明確')+(zhuanWang.pattern||ZHUAN_WANG_NAMES[el])+'：喜本行、印生與食傷洩秀，忌官殺「'+unfav.join('、')+'」逆制。'+
++            const r=pack((isAlternative?'疑似':'')+(zw.pattern||ZHUAN_WANG_NAMES[el])+'順勢'+(isAlternative?'（備選）':''),fav,unfav,
++                (isAlternative?'疑似':'明確')+(zw.pattern||ZHUAN_WANG_NAMES[el])+'：喜本行、印生與食傷洩秀，忌官殺「'+unfav.join('、')+'」逆制。'+
+                 (isAlternative?' 此組只供人生應證比較，目前不參與大運與流年曲線計分。':''));
+-            r.decision={activeRule:isAlternative?'專旺備選':'明確專旺',pattern:zhuanWang.pattern,affectsCurve:!isAlternative};
++            r.decision={activeRule:isAlternative?'專旺備選':'明確專旺',pattern:zw.pattern,subtype:'一行型',affectsCurve:!isAlternative};
+             return r;
+         }
+         function huaQiPack(isAlternative) {
+@@ -2687,10 +2754,10 @@ button {
+         function finalizeSpecialDecision(main,activeRule) {
+             const alternatives=[];
+             if(huaQi.status==='疑似化氣') alternatives.push(huaQiPack(true));
+-            if(zhuanWang.status==='疑似專旺') alternatives.push(zhuanWangPack(true));
+-            if(cong.status==='疑似從格') alternatives.push(cong.type==='從強'?followStrongPack(true):followWeakPack(true));
++            (zhuanWang.variants||[zhuanWang]).forEach(v=>{ if(v.status==='疑似專旺') alternatives.push(zhuanWangPack(true,v)); });
++            if(cong.status==='疑似從格') alternatives.push(followWeakPack(true));
+             main.decision={activeRule:activeRule||'正格',affectsCurve:true,congStatus:cong.status||'正格',
+-                zhuanWangStatus:zhuanWang.status||'正格',huaQiStatus:huaQi.status||'正格',monthPattern:monthPattern.type||null,
++                zhuanWangStatus:zhuanWang.status||'正格',zhuanWangSubtype:zhuanWang.subtype||null,huaQiStatus:huaQi.status||'正格',monthPattern:monthPattern.type||null,
+                 regularMonthPattern:regularMonthPattern.pattern||null,regularMonthVerdict:regularMonthPattern.verdict||null,
+                 classicalOuterPatterns:classicalOuterPatterns.map(x=>x.name),interpretivePatternsAffectCurve:false};
+             if(alternatives.length){
+@@ -2705,7 +2772,6 @@ button {
+         if(specialDecision.active&&specialDecision.active.family==='化氣格') return finalizeSpecialDecision(huaQiPack(false),'明確化氣格');
+         if(specialDecision.active&&specialDecision.active.family==='專旺格') return finalizeSpecialDecision(zhuanWangPack(false),'明確專旺格');
+         if(specialDecision.active&&specialDecision.active.family==='從格'&&strength.level==='從弱') return finalizeSpecialDecision(followWeakPack(false),'明確從格');
+-        if(specialDecision.active&&specialDecision.active.family==='從格'&&strength.level==='從強') return finalizeSpecialDecision(followStrongPack(false),'明確從格');
+ 
+         // ── 第 1 層：調候閘門（閘一：冬夏月　閘二：藏干計入、沖合作廢後仍缺）──
+         const mb = pillars.monthPillar.charAt(1);
+diff --git a/test-children.js b/test-children.js
+index 8e1ad4f..b8641ab 100644
+--- a/test-children.js
++++ b/test-children.js
+@@ -222,19 +222,44 @@ for (const c of CASES) {
+   ok(h.maybeWeak.s.details.congGe.status === '疑似從格' && h.maybeWeak.s.level === '身弱' &&
+      h.maybeWeak.y.decision.activeRule === '正格' && h.maybeWeak.y.alternative && h.maybeWeak.y.alternative.decision.affectsCurve === false,
+     '極弱但仍有一處孤援時列疑似從弱，主曲線維持正格並保存順勢備選');
+-  ok(h.clearStrong.s.details.congGe.status === '明確從格' && h.clearStrong.s.level === '從強' &&
+-     h.clearStrong.y.method === '從強格順勢',
+-    '滿盤生扶、敵方為零時判明確從強');
+-  ok(h.maybeStrong.s.details.congGe.status === '疑似從格' && h.maybeStrong.s.level === '身強' &&
+-     h.maybeStrong.y.alternatives.some(x => /疑似從強格/.test(x.method)),
+-    '生扶成勢但尚有一處逆勢時列疑似從強，不直接翻轉曲線');
++  ok(h.clearStrong.s.details.congGe.status === '正格' && h.clearStrong.s.details.zhuanWang.status === '明確專旺' &&
++     h.clearStrong.s.details.zhuanWang.subtype === '專旺我' && h.clearStrong.s.level === '專旺我' &&
++     h.clearStrong.y.method === '專旺我順勢' && h.clearStrong.y.favorable.join() === '木,水',
++    '滿盤生扶、敵方為零時判明確專旺我（師承 2026-09-28：印生我屬我方，不作從格；喜忌沿用印比喜）');
++  ok(h.maybeStrong.s.details.congGe.status === '正格' && h.maybeStrong.s.details.zhuanWang.status === '疑似專旺' &&
++     h.maybeStrong.s.details.zhuanWang.subtype === '專旺我' && h.maybeStrong.s.level === '身強' &&
++     h.maybeStrong.y.alternatives.some(x => /疑似專旺我/.test(x.method)),
++    '生扶成勢但尚有一處逆勢時列疑似專旺我，不直接翻轉曲線');
+   ok(h.regular.s.details.congGe.status === '正格' && !h.regular.y.alternative,
+     '未達極端失衡、月令與孤援門檻時維持正格');
+   const weakAlt=h.maybeWeak.y.alternatives.find(x=>/從兒格/.test(x.method));
+-  const strongAlt=h.maybeStrong.y.alternatives.find(x=>/從強格/.test(x.method));
++  const strongAlt=h.maybeStrong.y.alternatives.find(x=>/專旺我/.test(x.method));
+   ok(weakAlt && strongAlt && h.maybeWeak.y.favorable.join() !== weakAlt.favorable.join() &&
+      h.maybeStrong.y.favorable.join() !== strongAlt.favorable.join(),
+     '疑似從格同時保留正格與順勢兩套不同喜忌，只有正格組參與目前計分');
++  {
++    const cai={yearPillar:'戊戌',monthPillar:'己未',dayPillar:'辛丑',hourPillar:'乙未'};
++    const hc=assess(HtmlEngine,cai), nc=assess(NodeBaziEngine,cai);
++    ok(JSON.stringify(hc)===JSON.stringify(nc) && hc.s.details.congGe.caiBlocksZhuanWang && hc.s.details.congGe.caiBlocksZhuanWang.surviving &&
++       hc.s.details.zhuanWang.status==='正格' && !(hc.y.alternatives||[]).length && hc.y.favorable.includes('木'),
++      '滿盤印比而財存活（未合未沖）→ 正格病藥喜財，不列專旺我候選（師承 2026-09-28）');
++  }
++  {
++    const bm={yearPillar:'己巳',monthPillar:'丁丑',dayPillar:'戊午',hourPillar:'壬戌'};
++    const hb=assess(HtmlEngine,bm), nb=assess(NodeBaziEngine,bm);
++    ok(JSON.stringify(hb)===JSON.stringify(nb) && hb.s.details.congGe.caiBlocksZhuanWang && hb.s.details.congGe.caiBlocksZhuanWang.surviving &&
++       !hb.y.favorable.includes('水') && !hb.y.unfavorable.includes('水') && hb.y.favorable.includes('木') && hb.y.favorable.includes('金'),
++      '比劫最旺而財存活 → 病藥取官殺與食傷，財為閒神，不強制喜財（師承 2026-09-28）');
++  }
++  {
++    const T={bridged:{yearPillar:'癸酉',monthPillar:'庚申',dayPillar:'辛酉',hourPillar:'庚寅'},
++             bare:{yearPillar:'戊寅',monthPillar:'乙卯',dayPillar:'甲寅',hourPillar:'乙亥'},
++             over:{yearPillar:'己巳',monthPillar:'丁丑',dayPillar:'戊午',hourPillar:'壬子'}};
++    const r={}; Object.keys(T).forEach(k=>{ r[k]=assess(HtmlEngine,T[k]); ok(JSON.stringify(r[k])===JSON.stringify(assess(NodeBaziEngine,T[k])),'千里規則樣本 '+k+'：內嵌與 Node 同源'); });
++    ok(r.bridged.s.details.zhuanWang.status==='明確專旺','一行型見財有食傷引通 → 明確專旺（千里）');
++    ok(r.bare.s.details.zhuanWang.status==='疑似專旺' && r.bare.y.decision.activeRule==='正格','一行型見財無食傷 → 疑似，主曲線回正格（千里）');
++    ok(r.over.s.details.congGe.caiBlocksZhuanWang && r.over.y.decision.activeRule==='正格','結算歸零而財存活 → 不作明確專旺我');
++  }
+ 
+   const zwNames={curve:'曲直格',flame:'炎上格',earth:'稼穡格',metal:'從革格',water:'潤下格'};
+   ok(Object.keys(zwNames).every(k => h[k].s.details.zhuanWang.status === '明確專旺' &&
