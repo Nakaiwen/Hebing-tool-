@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f7f1e4">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="小六合盤">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>八字 × 紫微 × 太乙 合盤曲線 · 小六太乙</title>
 <script defer src="vendor/jspdf.umd.min.js"></script>
 <style>
@@ -2498,5 +2506,13 @@ window.__hebingDiagnostics=Object.freeze({
 <script src="qimen/qimen-engine.js"></script>
 <script src="moment.js"></script>
 <script src="wuxing-mainline.js" onload="window.__wuxingLoaded&&window.__wuxingLoaded()"></script>
+<script>
+/* PWA：註冊離線快取（本機 file:// 開啟與不支援的瀏覽器自動略過） */
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./sw.js').catch(function (e) { console.warn('Service Worker 註冊失敗：', e); });
+  });
+}
+</script>
 </body>
 </html>
