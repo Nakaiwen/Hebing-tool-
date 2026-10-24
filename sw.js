@@ -4,14 +4,14 @@
    ★ 每次發布新版請把 VERSION 加一，舊的核心快取會在啟用時自動清掉。
    快取分兩層：
    ① CORE（跟著版本走）：安裝時預先存好的頁面、程式、樣式、圖示。
-   ② RUNTIME（不隨版本清除）：第一次用到才存——標楷體（每份 36.8 MB）與 CDN 函式庫。
+   ② RUNTIME（不隨版本清除）：第一次用到才存——文鼎ＰＬ中楷（約 6.9 MB）與 CDN 函式庫。
    策略：
    - 網頁（導覽，含四個 iframe 子頁）：網路優先，離線時讀快取。
    - 同源程式／樣式／圖片：先回快取，背景更新（stale-while-revalidate）。
    - 字型（.ttf／.otf／.woff*）：只讀快取，第一次才下載，永不背景重抓。
    - CDN（jsdelivr、cdnjs）：先回快取，背景更新。
    ============================================================ */
-const VERSION = 'hebing-v0.9.37-pwa1';
+const VERSION = 'hebing-v0.9.37-pwa2';
 const CORE = VERSION + '-core';
 const RUNTIME = 'hebing-runtime-v1';
 
@@ -71,6 +71,11 @@ self.addEventListener('activate', event => {
       .then(keys => Promise.all(keys
         .filter(k => k.endsWith('-core') && k !== CORE)
         .map(k => caches.delete(k))))
+      // 舊版標楷體（biaukai.ttf，每份 36.8 MB）已改用文鼎ＰＬ中楷，從手機快取中清掉
+      .then(() => caches.open(RUNTIME))
+      .then(cache => cache.keys().then(reqs => Promise.all(reqs
+        .filter(r => /biaukai\.ttf$/i.test(new URL(r.url).pathname))
+        .map(r => cache.delete(r)))))
       .then(() => self.clients.claim())
   );
 });

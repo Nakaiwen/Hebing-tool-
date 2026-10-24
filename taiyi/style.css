@@ -1,8 +1,9 @@
     /* 這裡是 CSS 樣式區，可以控制網頁的外觀 */
 
+    /* 字型名稱 BiauKaiWeb 沿用舊名，實際字型為文鼎ＰＬ中楷（AR PL UKai TW，Arphic Public License，授權見 fonts/ARPHIC-PUBLIC-LICENSE.txt） */
     @font-face {
     font-family: 'BiauKaiWeb'; 
-    src: url('fonts/biaukai.ttf') format('truetype'); 
+    src: url('fonts/ukai-tw.woff2') format('woff2'); 
     }
 
     body {
