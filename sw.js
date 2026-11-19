@@ -11,7 +11,7 @@
    - 字型（.ttf／.otf／.woff*）：只讀快取，第一次才下載，永不背景重抓。
    - CDN（jsdelivr、cdnjs）：先回快取，背景更新。
    ============================================================ */
-const VERSION = 'hebing-v0.9.37-pwa2';
+const VERSION = 'hebing-v0.9.38-pwa2';
 const CORE = VERSION + '-core';
 const RUNTIME = 'hebing-runtime-v1';
 

@@ -1,0 +1,153 @@
+diff --git a/README.md b/README.md
+index 19b56bd..5e4ec5a 100644
+--- a/README.md
++++ b/README.md
+@@ -1,3 +1,21 @@
++# Hebing-tool v0.9.38（2026-11-19）：紫微流月能量序列入 JSON
++
++紫微橋接升 v1.4：合盤存檔（xiaoliu.hebing-save/v3 → curves.ziwei.months）新增**流月能量序列**，
++契約 `xiaoliu.ziwei-month/v1`，供命書 skills 做月運解讀：
++
++- 範圍：跑盤當下的農曆年起連兩個農曆年（含閏月，24–26 筆）。
++- 規則全部沿用既有師承裁定、無新裁定：層＝生年＋大限＋小限＋流年＋流月（5 層等權，即吉日表六層鏈去流日層）；
++  流月命宮＝斗君＋農曆月序；流月四化＝該月月柱天干；框架＝流月命宮三方四正；
++  計分＝stackCount 固定參數（祿權科 +10／忌 −15／祿權科齊 ×2）；疊忌≥3＝caution。
++- 工程選擇（非師承）：每農曆月取 15 日為月柱代表日（月中）。
++- 每筆欄位：lunarYear/lunarMonth/isLeap/liuGZ/monthGZ/yueZhi/yueZhiName/yuePalace/solarRef/score/jiTotal/label/triggers。
++- 驗證：斗君獨立公式重算、月柱曆法引擎直取、閏月分支（2028 閏五月 mock）、既有 test-children 全套回歸 ALL PASS；
++  月運斷言已固化進 test-children.js。sw.js 快取版本同步 bump（PWA 使用者自動更新）。
++
++套用：覆蓋 ziwei.html、test-children.js、sw.js、README.md，或 `git apply hebing-v0.9.38-ziwei-months.patch`。
++
++---
++
+ # Hebing-tool 同步補丁（2026-09-28）
+ 
+ 與 bazi-tool 同版的師承引擎改動：
+diff --git a/sw.js b/sw.js
+index 9474db5..41901b1 100644
+--- a/sw.js
++++ b/sw.js
+@@ -11,7 +11,7 @@
+    - 字型（.ttf／.otf／.woff*）：只讀快取，第一次才下載，永不背景重抓。
+    - CDN（jsdelivr、cdnjs）：先回快取，背景更新。
+    ============================================================ */
+-const VERSION = 'hebing-v0.9.37-pwa2';
++const VERSION = 'hebing-v0.9.38-pwa2';
+ const CORE = VERSION + '-core';
+ const RUNTIME = 'hebing-runtime-v1';
+ 
+diff --git a/test-children.js b/test-children.js
+index b8641ab..9df2e4e 100644
+--- a/test-children.js
++++ b/test-children.js
+@@ -467,6 +467,33 @@ for (const c of CASES) {
+   const labels = {};
+   d.years.forEach(y => labels[y.label] = (labels[y.label] || 0) + 1);
+   console.log('    年標籤分布：' + JSON.stringify(labels) + '　lunarBirthYear=' + d.lunarBirthYear);
++  // months 流月能量序列（橋接 v1.4，契約 xiaoliu.ziwei-month/v1）
++  {
++    const M = d.months;
++    ok(M && M.schema === 'xiaoliu.ziwei-month/v1' && !M.error, c.label + '：months 契約存在' + (M && M.error ? '（' + M.error + '）' : ''));
++    if (M && !M.error) {
++      const E2 = win.eval('E');
++      const l0 = E2.leapMonthOf(M.fromLunarYear), l1 = E2.leapMonthOf(M.toLunarYear);
++      ok(M.list.length === 24 + (l0 ? 1 : 0) + (l1 ? 1 : 0), c.label + '：月數＝兩農曆年24＋閏月（實得 ' + M.list.length + '）');
++      // 斗君獨立公式重算：月命宮＝(太歲支−(生月−1)＋生時＋月序−1) mod 12
++      const CH = win.eval('CHART');
++      const lMonth = CH.monthForChart || CH.lunar.lMonth, hb = CH.input.hourBranch;
++      let douOk = true, gzOk = true, lblOk = true;
++      for (const row of M.list) {
++        const L = E2.liuNian(row.lunarYear);
++        const yueIndep = ((((L.zhi - (lMonth - 1) + hb) % 12) + 12 + row.lunarMonth - 1) % 12 + 12) % 12;
++        if (yueIndep !== row.yueZhi) douOk = false;
++        const s = E2.lunarToSolar(row.lunarYear, row.lunarMonth, Math.min(15, E2.lunarMonthLen(row.lunarYear, row.lunarMonth, row.isLeap)), row.isLeap);
++        if (win.eval('SL').solar2lunar(s.y, s.m, s.d, 12).getMonthInGanZhi() !== row.monthGZ) gzOk = false;
++        if ((row.jiTotal >= 3) !== (row.label === 'caution' || row.label === 'mixed')) lblOk = false;
++      }
++      ok(douOk, c.label + '：流月命宮＝斗君獨立公式全月一致');
++      ok(gzOk, c.label + '：月柱干支＝曆法引擎直取全月一致');
++      ok(lblOk, c.label + '：月 label 與疊忌門檻一致');
++      const ml = {}; M.list.forEach(r => ml[r.label] = (ml[r.label] || 0) + 1);
++      console.log('    月標籤分布：' + JSON.stringify(ml));
++    }
++  }
+ }
+ 
+ console.log(fails === 0 ? '\nALL PASS' : '\nFAILED: ' + fails);
+diff --git a/ziwei.html b/ziwei.html
+index ab318dc..9f3e018 100644
+--- a/ziwei.html
++++ b/ziwei.html
+@@ -2453,6 +2453,7 @@ enhanceAllSelects(); // 把原生 <select> 換成自製下拉（Artifact 沙箱
+    契約：父頁 postMessage {xl:'xl-merge-bridge', type:'run', input:{name,gender('M'/'F'),y,m,d,h(0-11),lateZi,leapRule}}
+    回傳：{xl:'xl-merge-bridge', from:'ziwei', type:'ziwei-curve', ok, data|error}
+    一生流年能量資料走原始 lifeData() 程式碼路徑（生年+大限+小限+流年四層），零重製。
++   v1.4（2026-11-19）：新增 months 流月能量序列（xiaoliu.ziwei-month/v1，見下方函式註解）。
+    ============================================================ */
+ (function(){
+   var NS='xl-merge-bridge';
+@@ -2519,6 +2520,53 @@ enhanceAllSelects(); // 把原生 <select> 換成自製下拉（Artifact 沙箱
+       compute();
+       if(typeof CHART!=='undefined' && CHART){
+         var data=lifeData();
++        /* ============================================================
++           流月能量序列（v1.4，契約 xiaoliu.ziwei-month/v1）
++           全部沿用既有師承規則組合，無新裁定：
++           ・層＝生年＋大限＋小限＋流年＋流月（5 層等權）＝吉日表六層鏈去掉流日層
++           ・流月命宮＝斗君＋農曆月序（同流月盤 douJun 路徑）
++           ・流月四化＝該月月柱天干（八字真月柱，同 energyDay 的 P.monthGan）
++           ・框架＝流月命宮三方四正；計分＝stackCount 固定參數（祿權科+10/忌−15/齊×2）
++           ・label 門檻同 ENERGY.JI_THRESHOLD（疊忌≥3＝caution）
++           工程選擇（非師承）：每農曆月取「15 日」為月柱代表日（月中，避開節氣交界機率最高）；
++           範圍＝跑盤當下的農曆年起連兩個農曆年（含閏月）。
++           ============================================================ */
++        var months=null;
++        try{
++          var _now=new Date();
++          var _nl=E.solarToLunar(_now.getFullYear(), _now.getMonth()+1, _now.getDate());
++          var _y0=_nl.lYear, _list=[];
++          for(var _ly=_y0; _ly<=_y0+1; _ly++){
++            var _leapM=E.leapMonthOf(_ly);
++            var _L=E.liuNian(_ly), _dou=douJun(_L.zhi);
++            var _age=_ly-CHART.lunarBirthYear+1;
++            var _da=null;
++            for(var _k=0;_k<CHART.daList.length;_k++){ var _dd=CHART.daList[_k]; if(_age>=_dd.start&&_age<=_dd.end){_da=_dd;break;} }
++            var _xiaoHua=_age>0?E.siHuaByGan(CHART.zhiGanIndex[xiaoZhiOf(_age)]):{};
++            for(var _lm=1;_lm<=12;_lm++){
++              var _variants=[false]; if(_leapM===_lm) _variants.push(true);
++              for(var _vi=0;_vi<_variants.length;_vi++){
++                var _leap=_variants[_vi];
++                var _md=Math.min(15, E.lunarMonthLen(_ly,_lm,_leap));
++                var _s=E.lunarToSolar(_ly,_lm,_md,_leap);
++                if(!_s) continue;
++                var _P=solarPillars(_s.y,_s.m,_s.d);
++                var _yueZhi=((_dou+(_lm-1))%12+12)%12;
++                var _layers=[CHART.huaMap, _da?_da.hua:{}, _xiaoHua, _L.hua, E.siHuaByGan(_P.monthGan)];
++                var _r=stackCount([_yueZhi,(_yueZhi+6)%12,(_yueZhi+4)%12,(_yueZhi+8)%12], _layers);
++                _list.push({ lunarYear:_ly, lunarMonth:_lm, isLeap:_leap,
++                  liuGZ:_L.ganZhi, monthGZ:_P.monthGZ,
++                  yueZhi:_yueZhi, yueZhiName:E.ZHI[_yueZhi], yuePalace:CHART.palaces[_yueZhi].palaceName,
++                  solarRef:_s.y+'-'+String(_s.m).padStart(2,'0')+'-'+String(_s.d).padStart(2,'0'),
++                  score:_r.score, jiTotal:_r.jiTotal, label:_r.label,
++                  triggers:_r.triggers.map(function(t){ return {name:t.name, natal:t.natal, lu:t.lu, quan:t.quan, ke:t.ke, ji:t.ji}; }) });
++              }
++            }
++          }
++          months={ schema:'xiaoliu.ziwei-month/v1',
++            rule:'層＝生年＋大限＋小限＋流年＋流月（5層等權）；框架＝流月命宮三方四正（斗君起）；流月四化取該農曆月15日之月柱天干；計分同吉日表固定參數，疊忌≥'+ENERGY.JI_THRESHOLD+'＝caution',
++            fromLunarYear:_y0, toLunarYear:_y0+1, list:_list };
++        }catch(_e){ months={ schema:'xiaoliu.ziwei-month/v1', error:String(_e&&_e.message||_e), list:[] }; }
+         /* 大限能量：走原始 daenData()/daenClass() 程式碼路徑，零重製（v1.1 新增） */
+         var daenRows=daenData();
+         var dScores=daenRows.map(function(r){return r.score;});
+@@ -2543,7 +2591,8 @@ enhanceAllSelects(); // 把原生 <select> 換成自製下拉（Artifact 沙箱
+           /* v0.9.30：十二宮主星＋五行（供回測過去大限、技能查財帛／田宅） */
+           palaces: CHART.palaces.map(function(p){ return { zhi:p.zhi, zhiElement:p.zhiElement, gan:p.gan, palaceName:p.palaceName, isMing:p.isMing, isShen:p.isShen,
+             stars:p.stars.filter(function(s){return s.type==='主';}).map(function(s){ return {name:s.name, element:s.element, element2:s.element2, brightness:s.brightness, natalHua:s.hua}; }) }; }),
+-          wealthSignals: ziweiWealthSignals()
++          wealthSignals: ziweiWealthSignals(),
++          months: months
+         }});
+       } else post({type:'ziwei-curve', ok:false, error:'排盤未成功'});
+     }catch(e){ post({type:'ziwei-curve', ok:false, error:String(e&&e.message||e)}); }

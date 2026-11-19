@@ -467,6 +467,33 @@ for (const c of CASES) {
   const labels = {};
   d.years.forEach(y => labels[y.label] = (labels[y.label] || 0) + 1);
   console.log('    年標籤分布：' + JSON.stringify(labels) + '　lunarBirthYear=' + d.lunarBirthYear);
+  // months 流月能量序列（橋接 v1.4，契約 xiaoliu.ziwei-month/v1）
+  {
+    const M = d.months;
+    ok(M && M.schema === 'xiaoliu.ziwei-month/v1' && !M.error, c.label + '：months 契約存在' + (M && M.error ? '（' + M.error + '）' : ''));
+    if (M && !M.error) {
+      const E2 = win.eval('E');
+      const l0 = E2.leapMonthOf(M.fromLunarYear), l1 = E2.leapMonthOf(M.toLunarYear);
+      ok(M.list.length === 24 + (l0 ? 1 : 0) + (l1 ? 1 : 0), c.label + '：月數＝兩農曆年24＋閏月（實得 ' + M.list.length + '）');
+      // 斗君獨立公式重算：月命宮＝(太歲支−(生月−1)＋生時＋月序−1) mod 12
+      const CH = win.eval('CHART');
+      const lMonth = CH.monthForChart || CH.lunar.lMonth, hb = CH.input.hourBranch;
+      let douOk = true, gzOk = true, lblOk = true;
+      for (const row of M.list) {
+        const L = E2.liuNian(row.lunarYear);
+        const yueIndep = ((((L.zhi - (lMonth - 1) + hb) % 12) + 12 + row.lunarMonth - 1) % 12 + 12) % 12;
+        if (yueIndep !== row.yueZhi) douOk = false;
+        const s = E2.lunarToSolar(row.lunarYear, row.lunarMonth, Math.min(15, E2.lunarMonthLen(row.lunarYear, row.lunarMonth, row.isLeap)), row.isLeap);
+        if (win.eval('SL').solar2lunar(s.y, s.m, s.d, 12).getMonthInGanZhi() !== row.monthGZ) gzOk = false;
+        if ((row.jiTotal >= 3) !== (row.label === 'caution' || row.label === 'mixed')) lblOk = false;
+      }
+      ok(douOk, c.label + '：流月命宮＝斗君獨立公式全月一致');
+      ok(gzOk, c.label + '：月柱干支＝曆法引擎直取全月一致');
+      ok(lblOk, c.label + '：月 label 與疊忌門檻一致');
+      const ml = {}; M.list.forEach(r => ml[r.label] = (ml[r.label] || 0) + 1);
+      console.log('    月標籤分布：' + JSON.stringify(ml));
+    }
+  }
 }
 
 console.log(fails === 0 ? '\nALL PASS' : '\nFAILED: ' + fails);
