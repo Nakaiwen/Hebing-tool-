@@ -423,13 +423,14 @@ iframe{width:100%; height:1400px; border:1px solid var(--line); border-radius:0 
    擴充契約 ext-curve（為太乙等後續命法預留，additive）：
      {xl:'xl-merge-bridge', from:'<id>', type:'ext-curve', ok:true,
       data:{ series:[{ id, label, color?, points:[{year, value}],
-                       boundaries?:[{year, label}] }] }}
+                       boundaries?:[{year, label}] }], natal? }}
+     natal（v0.9.40，太乙）：本命星曜盤快照，存檔為 curves.taiyi，不參與計分。
      points.value 為原始分數，父頁以該序列 max|value| 各自正規化。
    ============================================================ */
 (function(){
 var NS='xl-merge-bridge';
 var $=function(id){ return document.getElementById(id); };
-var STATE={ bazi:null, ziwei:null, ext:[], ready:{bazi:false,ziwei:false,taiyi:false},
+var STATE={ bazi:null, ziwei:null, ext:[], taiyiNatal:null, ready:{bazi:false,ziwei:false,taiyi:false},
             pending:null, sel:null, zmode:'daen' };
 /* v0.9.34：預設只顯示「八字＋紫微」（五行主線曲線）與太乙；八字、紫微單線預設隱藏 */
 var VIEW_DEFAULT_HIDDEN={bazi:true,ziwei:true};
@@ -474,7 +475,7 @@ function send(frameId, input){
 $('f-go').onclick=function(){
   var f=readForm();
   if(f.err){ $('f-status').innerHTML='<span class="err">'+f.err+'</span>'; return; }
-  STATE.bazi=null; STATE.ziwei=null; STATE.ext=[]; STATE.sel=null;
+  STATE.bazi=null; STATE.ziwei=null; STATE.ext=[]; STATE.taiyiNatal=null; STATE.sel=null;
   $('f-save').disabled=true; $('ovPdf').disabled=true; $('ovPng').disabled=true; $('ovSvg').disabled=true;
   $('resoCard').style.display='none'; $('syncCard').style.display='';
   $('syncGrid').innerHTML='<div class="sync-wait">三法排盤中，正在等待八字、紫微與太乙曲線資料……</div>';
@@ -495,7 +496,9 @@ window.addEventListener('message', function(ev){
     return;
   }
   if(d.type==='ext-curve'){
-    if(d.ok&&d.data&&d.data.series){ STATE.ext=STATE.ext.concat(d.data.series); renderOverlay(); }
+    if(d.ok&&d.data&&d.data.series){ STATE.ext=STATE.ext.concat(d.data.series);
+      if(d.data.natal) STATE.taiyiNatal=d.data.natal; /* v0.9.40：太乙本命星曜盤（純資料） */
+      renderOverlay(); }
     else if(d.error){ $('f-status').innerHTML+=' <span class="err">太乙：'+d.error+'</span>'; renderSyncAlerts(); }
     return;
   }
@@ -2073,7 +2076,9 @@ $('f-save').onclick=function(){
     curves:{
       bazi: STATE.bazi&&STATE.bazi.ok?STATE.bazi.data:null,
       ziwei: STATE.ziwei&&STATE.ziwei.ok?STATE.ziwei.data:null,
-      ext: STATE.ext
+      ext: STATE.ext,
+      /* v0.9.40：太乙本命星曜盤快照（xiaoliu.taiyi-natal/v1；欄位同太乙單機版命盤存擋），純資料不計分 */
+      taiyi: STATE.taiyiNatal
     },
     resonance: reso?{ y0:reso.y0, y1:reso.y1, pairs:reso.pairs, bands:reso.bands,
                       syncAlerts:anchored, taiyiAnchoredZones:anchored,

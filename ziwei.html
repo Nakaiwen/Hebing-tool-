@@ -1405,7 +1405,7 @@ table.node tr.drill-row td{background:#fbf6ea;padding:9px 12px;}
 
 </script>
 <script>
-const TOOL_VERSION = '1.6.3';   // 版號（單一來源）：修錯誤跳 patch、加功能跳 minor、破壞性改動跳 major
+const TOOL_VERSION = '1.7.0';   // 版號（單一來源）：修錯誤跳 patch、加功能跳 minor、破壞性改動跳 major
 const E = window.ziweiEngine;
 const $ = id => document.getElementById(id);
 (function(){ const s=document.getElementById('subtitle'); if(s) s.textContent += ' · v'+TOOL_VERSION; })();
@@ -2454,6 +2454,9 @@ enhanceAllSelects(); // 把原生 <select> 換成自製下拉（Artifact 沙箱�
    回傳：{xl:'xl-merge-bridge', from:'ziwei', type:'ziwei-curve', ok, data|error}
    一生流年能量資料走原始 lifeData() 程式碼路徑（生年+大限+小限+流年四層），零重製。
    v1.4（2026-11-19）：新增 months 流月能量序列（xiaoliu.ziwei-month/v1，見下方函式註解）。
+   v1.5（2026-11-21）：palaces[] 加 minorStars（本命輔／煞／雜曜，含生年四化）；daen[] 加 daLuYangTuo
+                       （大限干起祿存，前一位擎羊、後一位陀羅）。純資料欄位，不參與任何計分。
+                       來源：范振木〈論命實務十一〉回測，占驗派推論大量依賴羊陀祿存與輔弼昌曲，舊檔重現不了（Nakai 裁定補欄位）。
    ============================================================ */
 (function(){
   var NS='xl-merge-bridge';
@@ -2506,6 +2509,19 @@ enhanceAllSelects(); // 把原生 <select> 換成自製下拉（Artifact 沙箱�
       }
       return base;
     }catch(e){ base.error=String(e&&e.message||e); return base; }
+  }
+  /* v1.5：大限祿存／擎羊／陀羅。走引擎 liuNian() 的祿存表（同流祿羊陀安法），
+     取「天干＝大限干」的任一年即可（1984＝甲，往後順推），不另抄一份祿存表。 */
+  function daLuYangTuoOf(ganIndex){
+    try{
+      if(typeof ganIndex!=='number') return null;
+      var st=E.liuNian(1984+ganIndex).stars, out={};
+      [['流祿','祿存'],['流羊','擎羊'],['流陀','陀羅']].forEach(function(pair){
+        var s=st.find(function(x){return x.name===pair[0];});
+        if(s) out[pair[1]]={zhi:E.ZHI[s.zhi], palaceName:CHART.palaces[s.zhi].palaceName};
+      });
+      return out;
+    }catch(e){ return null; }
   }
   window.addEventListener('message',function(ev){
     var d=ev.data; if(!d||d.xl!==NS||d.type!=='run') return;
@@ -2579,7 +2595,9 @@ enhanceAllSelects(); // 把原生 <select> 換成自製下拉（Artifact 沙箱�
                    advice:DAEN_ADVICE[cls.key], isCur:r.isCur, isShen:r.isShen,
                    /* v0.9.30 五行主線用：宮支五行、大限命宮主星（含主／次五行、生年四化、大限四化）、大限干四化、三方四正主星 */
                    zhi:r.d.zhi, zhiElement:r.d.zhiElement, gan:r.d.gan, hua:r.d.hua, huaText:r.d.huaText,
-                   stars:r.d.stars, starsBorrowed:!!r.d.starsBorrowed, frameStars:r.d.frameStars };
+                   stars:r.d.stars, starsBorrowed:!!r.d.starsBorrowed, frameStars:r.d.frameStars,
+                   /* v1.5：大限祿存／擎羊／陀羅（宮支＋本命宮名），純資料、不計分 */
+                   daLuYangTuo:daLuYangTuoOf(r.d.ganIndex) };
         });
         post({type:'ziwei-curve', ok:true, data:{
           lunarBirthYear: CHART.lunarBirthYear,
@@ -2590,7 +2608,9 @@ enhanceAllSelects(); // 把原生 <select> 換成自製下拉（Artifact 沙箱�
           daen: daen,
           /* v0.9.30：十二宮主星＋五行（供回測過去大限、技能查財帛／田宅） */
           palaces: CHART.palaces.map(function(p){ return { zhi:p.zhi, zhiElement:p.zhiElement, gan:p.gan, palaceName:p.palaceName, isMing:p.isMing, isShen:p.isShen,
-            stars:p.stars.filter(function(s){return s.type==='主';}).map(function(s){ return {name:s.name, element:s.element, element2:s.element2, brightness:s.brightness, natalHua:s.hua}; }) }; }),
+            stars:p.stars.filter(function(s){return s.type==='主';}).map(function(s){ return {name:s.name, element:s.element, element2:s.element2, brightness:s.brightness, natalHua:s.hua}; }),
+            /* v1.5：本命輔／煞／雜曜（type＝輔｜煞｜雜；natalHua＝生年四化，昌曲輔弼可能帶化） */
+            minorStars:p.stars.filter(function(s){return s.type!=='主';}).map(function(s){ return {name:s.name, type:s.type, natalHua:s.hua||''}; }) }; }),
           wealthSignals: ziweiWealthSignals(),
           months: months
         }});

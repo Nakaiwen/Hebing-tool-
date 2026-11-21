@@ -398,6 +398,14 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
   const zd0 = saveObj && saveObj.curves && saveObj.curves.ziwei && saveObj.curves.ziwei.daen;
   ok(Array.isArray(zd0) && zd0.length === 12 && zd0.every(d => d.zhiElement && Array.isArray(d.stars) && d.hua), '存檔 daen[] 含 zhiElement／stars／hua（v3）');
   ok(!!(saveObj.curves.ziwei.palaces && saveObj.curves.ziwei.palaces.length === 12), '存檔 ziwei.palaces 十二宮（v3）');
+  ok(saveObj.curves.ziwei.palaces.every(p => Array.isArray(p.minorStars)) &&
+     saveObj.curves.ziwei.palaces.some(p => p.minorStars.some(s => s.name === '擎羊')), '存檔 ziwei.palaces[].minorStars 帶出副星（橋接 v1.5）');
+  ok(zd0.every(d => d.daLuYangTuo && d.daLuYangTuo.擎羊), '存檔 daen[].daLuYangTuo 帶出大限祿羊陀（橋接 v1.5）');
+  const tn = saveObj.curves.taiyi;
+  ok(!!(tn && tn.schema === 'xiaoliu.taiyi-natal/v1' && tn.chartModel && tn.arrangedLifePalaces && tn.arrangedLifePalaces.length === 12 &&
+        Array.isArray(tn.kongWangResult) && tn.lookupResult && tn.lookupResult.太乙),
+     '存檔 curves.taiyi 帶出太乙本命星曜盤（v0.9.40）');
+  ok(!!(tn && !('annualHuaYaoStructured' in tn) && !('transitActivations' in tn)), 'curves.taiyi 不含流年／流日層');
   ok(!!(saveObj.curves.bazi && saveObj.curves.bazi.dayMaster && saveObj.curves.bazi.dayMaster.gan === '己'), '存檔 bazi.dayMaster 為己（v3）');
   const wei = zd0 && zd0.find(d => d.zhi === '未'), wu = zd0 && zd0.find(d => d.zhi === '午');
   ok(!!(wei && wei.stars[0] && wei.stars[0].name === '天機' && wei.stars[0].daHua === '祿'), '未宮主星天機化祿');

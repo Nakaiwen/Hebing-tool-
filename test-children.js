@@ -494,6 +494,45 @@ for (const c of CASES) {
       console.log('    月標籤分布：' + JSON.stringify(ml));
     }
   }
+  // 副星欄位（橋接 v1.5）：palaces[].minorStars 與引擎本命盤全等；daen[].daLuYangTuo 齊備
+  {
+    const CH = win.eval('CHART');
+    const P = d.palaces || [];
+    const sameMinor = P.length === 12 && P.every((p, z) => {
+      const ref = CH.palaces[z].stars.filter(s => s.type !== '主');
+      return Array.isArray(p.minorStars) && p.minorStars.length === ref.length &&
+        p.minorStars.every((s, i) => s.name === ref[i].name && s.type === ref[i].type && s.natalHua === (ref[i].hua || ''));
+    });
+    ok(sameMinor, c.label + '：palaces[].minorStars === 引擎本命輔煞雜曜全等');
+    ok(d.daen.every(r => r.daLuYangTuo && r.daLuYangTuo.祿存 && r.daLuYangTuo.擎羊 && r.daLuYangTuo.陀羅),
+      c.label + '：daen[].daLuYangTuo 十二大限齊備');
+  }
+}
+
+/* ---------- 紫微副星回歸件：范振木〈論命實務十一〉附盤（fjm.tw 編號 894） ---------- */
+console.log('== ziwei.html 副星回歸（1967-03-25 亥時 男，范振木附盤） ==');
+{
+  const sink = [];
+  const dom = loadPage('ziwei.html', { parentSink: sink });
+  sendRun(dom, { name: '移根換葉', gender: 'M', y: 1967, m: 3, d: 25, h: 11, lateZi: false, leapRule: 'split15' });
+  const resp = sink.find(m => m.type === 'ziwei-curve');
+  ok(!!(resp && resp.ok), '范盤：排盤成功');
+  if (resp && resp.ok) {
+    const d = resp.data;
+    const at = name => { const p = d.palaces.find(p => p.minorStars.some(s => s.name === name)); return p ? p.zhi : null; };
+    // 附盤實見位置（輔煞與常用雜曜）
+    const EXPECT = { 祿存: '午', 擎羊: '未', 陀羅: '巳', 左輔: '巳', 右弼: '酉', 文昌: '亥', 文曲: '卯',
+      天魁: '亥', 天鉞: '酉', 火星: '申', 鈴星: '酉', 地空: '子', 地劫: '戌', 天馬: '巳',
+      紅鸞: '申', 天喜: '寅', 天姚: '寅', 天刑: '戌', 孤辰: '申', 寡宿: '辰', 台輔: '巳', 封誥: '丑' };
+    const miss = Object.keys(EXPECT).filter(k => at(k) !== EXPECT[k]).map(k => k + '應在' + EXPECT[k] + '實得' + at(k));
+    ok(miss.length === 0, '范盤：22 顆輔煞雜曜位置與附盤一致' + (miss.length ? '（' + miss.join('、') + '）' : ''));
+    // 大限祿羊陀：第三大限壬寅、第四大限癸丑（范文推論依據）
+    const da = start => d.daen.find(r => r.start === start).daLuYangTuo;
+    const d3 = da(26), d4 = da(36);
+    ok(d3.祿存.zhi === '亥' && d3.擎羊.zhi === '子' && d3.陀羅.zhi === '戌', '范盤：壬寅大限 祿存亥／擎羊子／陀羅戌');
+    ok(d4.祿存.zhi === '子' && d4.擎羊.zhi === '丑' && d4.陀羅.zhi === '亥', '范盤：癸丑大限 祿存子／擎羊丑／陀羅亥');
+    ok(d3.擎羊.palaceName === '財帛' && d4.擎羊.palaceName === '子女', '范盤：大限擎羊附本命宮名');
+  }
 }
 
 console.log(fails === 0 ? '\nALL PASS' : '\nFAILED: ' + fails);

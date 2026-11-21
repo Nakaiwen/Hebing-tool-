@@ -6962,6 +6962,7 @@ if (switchToNationalBtn) {
                    與圖表 annual 模式同一計算流程）
        年齡慣例依本工具原始碼：虛歲（西元年＝出生年＋歲−1）。
        行年序列另附太乙既有計算的 specialYears：祿馬交馳與科甲年份分類。
+       v1.4（2026-11-21）：data.natal 附本命星曜盤快照（xiaoliu.taiyi-natal/v1），純資料、不計分。
        ============================================================ */
     (function(){
       var NS='xl-merge-bridge';
@@ -7033,12 +7034,28 @@ if (switchToNationalBtn) {
             luZhuAndFeiLu:(keJiaYears.luZhuAndFeiLu||[]).slice(),
             luZhuAndFeiMa:(keJiaYears.luZhuAndFeiMa||[]).slice()
           };
+          /* --- v1.4（2026-11-21）：本命星曜盤快照（純資料、不計分）---
+             只取「本命層」欄位（終身不變），不帶流年／流日層（annual*／transit*／monthly*／upcoming*），
+             避免合盤檔混入跑盤當下的時間層。欄位名與太乙單機版「命盤存擋」JSON 完全相同，技能可共用讀法。
+             來源：范振木〈論命實務一〉回測，合盤檔缺星曜盤導致太乙基本結構無法核對（Nakai 2026-11-21 裁定補）。 */
+          var NATAL_KEYS=['userName','gender','birthDate','birthHour',
+            'yearPillar','monthPillar','dayPillar','hourPillar','dayMasterData','dayMasterInfo',
+            'arrangedLifePalaces','shenPalaceBranch','kongWangResult','bureauResult','lookupResult',
+            'deitiesResult','suanStarsResult','shiWuFuResult','xiaoYouResult','junJiResult','chenJiResult',
+            'minJiResult','tianYiResult','diYiResult','siShenResult','feiFuResult','daYouResult','huangEnResult',
+            'shouQiResult','birthHexagramResult','liYeHexagramResult','liYeStartAge',
+            'chartModel','lifePalacesSummary','dayActivations','keJiaYears',
+            'baiLiuResult','yangJiuResult','daYouZhenXianResult','feiLuDaXianResult','feiMaDaXianResult'];
+          var natal={ schema:'xiaoliu.taiyi-natal/v1', source:'taiyi/script.js currentChartData' };
+          NATAL_KEYS.forEach(function(k){
+            if(currentChartData[k]!==undefined) natal[k]=JSON.parse(JSON.stringify(currentChartData[k]));
+          });
           post({type:'ext-curve', ok:true, data:{ series:[
             { id:'taiyi-xianli', label:'限例太乙', color:'#7d5a44', level:'daen',
               points:segPts, boundaries:segBounds, segments:segs },
             { id:'taiyi-xingnian', label:'太乙行年趨勢', color:'#46708a', level:'year',
               points:annPts, specialYears:specialYears }
-          ]}});
+          ], natal:natal }});
         }catch(e){ post({type:'ext-curve', ok:false, error:String(e&&e.message||e)}); }
       });
       post({type:'ready'});

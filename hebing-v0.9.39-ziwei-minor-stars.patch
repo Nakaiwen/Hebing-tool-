@@ -1,0 +1,164 @@
+diff --git a/README.md b/README.md
+index 5e4ec5a..d96d80f 100644
+--- a/README.md
++++ b/README.md
+@@ -1,3 +1,17 @@
++# Hebing-tool v0.9.39（2026-11-21）：紫微副星欄位入 JSON
++
++紫微橋接升 v1.5（ziwei.html TOOL_VERSION 1.7.0）：合盤存檔（xiaoliu.hebing-save/v3）新增兩個**純資料欄位**，不參與任何計分、曲線不變：
++
++- `curves.ziwei.palaces[].minorStars`：本命輔／煞／雜曜，每筆 `{name, type(輔｜煞｜雜), natalHua}`——祿存、擎羊、陀羅、左輔、右弼、文昌、文曲、天魁、天鉞、火星、鈴星、地空、地劫、天馬、紅鸞、天喜、天姚、天刑等，直接取引擎本命盤，零重製。
++- `curves.ziwei.daen[].daLuYangTuo`：大限干起祿存，前一位擎羊、後一位陀羅，每顆 `{zhi, palaceName(本命宮名)}`；走引擎 liuNian() 的祿存表，不另抄表。
++- 來源：范振木〈論命實務十一〉（fjm.tw 編號 894）回測——占驗派推論大量依賴羊陀祿存與輔弼昌曲，舊檔重現不了；Nakai 2026-11-21 裁定補欄位。
++- 驗證：test-children.js 新增「minorStars 與引擎全等」「daLuYangTuo 十二大限齊備」兩項（兩命例），並新增范盤回歸件（1967-03-25 亥時男）：22 顆輔煞雜曜位置與附盤逐一相符、壬寅／癸丑大限祿羊陀相符；test-parent.js 新增存檔欄位兩項。test-children、test-parent ALL PASS。test-pwa（cache.keys）、test-research-ui（流月列數）在改動前後同樣失敗，屬既有環境問題，與本版無關。
++- 尚未涵蓋（待裁定再做）：截空、旬空、天官、天福等引擎未安的雜曜；流年流曜（流羊流陀流馬）逐年欄位。
++
++套用：覆蓋 ziwei.html、test-children.js、test-parent.js、sw.js、README.md，或 `git apply hebing-v0.9.39-ziwei-minor-stars.patch`。
++
++---
++
+ # Hebing-tool v0.9.38（2026-11-19）：紫微流月能量序列入 JSON
+ 
+ 紫微橋接升 v1.4：合盤存檔（xiaoliu.hebing-save/v3 → curves.ziwei.months）新增**流月能量序列**，
+diff --git a/sw.js b/sw.js
+index 41901b1..d89ef50 100644
+--- a/sw.js
++++ b/sw.js
+@@ -11,7 +11,7 @@
+    - 字型（.ttf／.otf／.woff*）：只讀快取，第一次才下載，永不背景重抓。
+    - CDN（jsdelivr、cdnjs）：先回快取，背景更新。
+    ============================================================ */
+-const VERSION = 'hebing-v0.9.38-pwa2';
++const VERSION = 'hebing-v0.9.39-pwa1';
+ const CORE = VERSION + '-core';
+ const RUNTIME = 'hebing-runtime-v1';
+ 
+diff --git a/test-children.js b/test-children.js
+index 9df2e4e..13fc674 100644
+--- a/test-children.js
++++ b/test-children.js
+@@ -494,6 +494,45 @@ for (const c of CASES) {
+       console.log('    月標籤分布：' + JSON.stringify(ml));
+     }
+   }
++  // 副星欄位（橋接 v1.5）：palaces[].minorStars 與引擎本命盤全等；daen[].daLuYangTuo 齊備
++  {
++    const CH = win.eval('CHART');
++    const P = d.palaces || [];
++    const sameMinor = P.length === 12 && P.every((p, z) => {
++      const ref = CH.palaces[z].stars.filter(s => s.type !== '主');
++      return Array.isArray(p.minorStars) && p.minorStars.length === ref.length &&
++        p.minorStars.every((s, i) => s.name === ref[i].name && s.type === ref[i].type && s.natalHua === (ref[i].hua || ''));
++    });
++    ok(sameMinor, c.label + '：palaces[].minorStars === 引擎本命輔煞雜曜全等');
++    ok(d.daen.every(r => r.daLuYangTuo && r.daLuYangTuo.祿存 && r.daLuYangTuo.擎羊 && r.daLuYangTuo.陀羅),
++      c.label + '：daen[].daLuYangTuo 十二大限齊備');
++  }
++}
++
++/* ---------- 紫微副星回歸件：范振木〈論命實務十一〉附盤（fjm.tw 編號 894） ---------- */
++console.log('== ziwei.html 副星回歸（1967-03-25 亥時 男，范振木附盤） ==');
++{
++  const sink = [];
++  const dom = loadPage('ziwei.html', { parentSink: sink });
++  sendRun(dom, { name: '移根換葉', gender: 'M', y: 1967, m: 3, d: 25, h: 11, lateZi: false, leapRule: 'split15' });
++  const resp = sink.find(m => m.type === 'ziwei-curve');
++  ok(!!(resp && resp.ok), '范盤：排盤成功');
++  if (resp && resp.ok) {
++    const d = resp.data;
++    const at = name => { const p = d.palaces.find(p => p.minorStars.some(s => s.name === name)); return p ? p.zhi : null; };
++    // 附盤實見位置（輔煞與常用雜曜）
++    const EXPECT = { 祿存: '午', 擎羊: '未', 陀羅: '巳', 左輔: '巳', 右弼: '酉', 文昌: '亥', 文曲: '卯',
++      天魁: '亥', 天鉞: '酉', 火星: '申', 鈴星: '酉', 地空: '子', 地劫: '戌', 天馬: '巳',
++      紅鸞: '申', 天喜: '寅', 天姚: '寅', 天刑: '戌', 孤辰: '申', 寡宿: '辰', 台輔: '巳', 封誥: '丑' };
++    const miss = Object.keys(EXPECT).filter(k => at(k) !== EXPECT[k]).map(k => k + '應在' + EXPECT[k] + '實得' + at(k));
++    ok(miss.length === 0, '范盤：22 顆輔煞雜曜位置與附盤一致' + (miss.length ? '（' + miss.join('、') + '）' : ''));
++    // 大限祿羊陀：第三大限壬寅、第四大限癸丑（范文推論依據）
++    const da = start => d.daen.find(r => r.start === start).daLuYangTuo;
++    const d3 = da(26), d4 = da(36);
++    ok(d3.祿存.zhi === '亥' && d3.擎羊.zhi === '子' && d3.陀羅.zhi === '戌', '范盤：壬寅大限 祿存亥／擎羊子／陀羅戌');
++    ok(d4.祿存.zhi === '子' && d4.擎羊.zhi === '丑' && d4.陀羅.zhi === '亥', '范盤：癸丑大限 祿存子／擎羊丑／陀羅亥');
++    ok(d3.擎羊.palaceName === '財帛' && d4.擎羊.palaceName === '子女', '范盤：大限擎羊附本命宮名');
++  }
+ }
+ 
+ console.log(fails === 0 ? '\nALL PASS' : '\nFAILED: ' + fails);
+diff --git a/test-parent.js b/test-parent.js
+index 9b8f7a0..12ea8f8 100644
+--- a/test-parent.js
++++ b/test-parent.js
+@@ -398,6 +398,9 @@ const countPoly = svg => (svg.match(/<polyline/g) || []).length;
+   const zd0 = saveObj && saveObj.curves && saveObj.curves.ziwei && saveObj.curves.ziwei.daen;
+   ok(Array.isArray(zd0) && zd0.length === 12 && zd0.every(d => d.zhiElement && Array.isArray(d.stars) && d.hua), '存檔 daen[] 含 zhiElement／stars／hua（v3）');
+   ok(!!(saveObj.curves.ziwei.palaces && saveObj.curves.ziwei.palaces.length === 12), '存檔 ziwei.palaces 十二宮（v3）');
++  ok(saveObj.curves.ziwei.palaces.every(p => Array.isArray(p.minorStars)) &&
++     saveObj.curves.ziwei.palaces.some(p => p.minorStars.some(s => s.name === '擎羊')), '存檔 ziwei.palaces[].minorStars 帶出副星（橋接 v1.5）');
++  ok(zd0.every(d => d.daLuYangTuo && d.daLuYangTuo.擎羊), '存檔 daen[].daLuYangTuo 帶出大限祿羊陀（橋接 v1.5）');
+   ok(!!(saveObj.curves.bazi && saveObj.curves.bazi.dayMaster && saveObj.curves.bazi.dayMaster.gan === '己'), '存檔 bazi.dayMaster 為己（v3）');
+   const wei = zd0 && zd0.find(d => d.zhi === '未'), wu = zd0 && zd0.find(d => d.zhi === '午');
+   ok(!!(wei && wei.stars[0] && wei.stars[0].name === '天機' && wei.stars[0].daHua === '祿'), '未宮主星天機化祿');
+diff --git a/ziwei.html b/ziwei.html
+index 9f3e018..e762321 100644
+--- a/ziwei.html
++++ b/ziwei.html
+@@ -1405,7 +1405,7 @@ table.node tr.drill-row td{background:#fbf6ea;padding:9px 12px;}
+ 
+ </script>
+ <script>
+-const TOOL_VERSION = '1.6.3';   // 版號（單一來源）：修錯誤跳 patch、加功能跳 minor、破壞性改動跳 major
++const TOOL_VERSION = '1.7.0';   // 版號（單一來源）：修錯誤跳 patch、加功能跳 minor、破壞性改動跳 major
+ const E = window.ziweiEngine;
+ const $ = id => document.getElementById(id);
+ (function(){ const s=document.getElementById('subtitle'); if(s) s.textContent += ' · v'+TOOL_VERSION; })();
+@@ -2454,6 +2454,9 @@ enhanceAllSelects(); // 把原生 <select> 換成自製下拉（Artifact 沙箱
+    回傳：{xl:'xl-merge-bridge', from:'ziwei', type:'ziwei-curve', ok, data|error}
+    一生流年能量資料走原始 lifeData() 程式碼路徑（生年+大限+小限+流年四層），零重製。
+    v1.4（2026-11-19）：新增 months 流月能量序列（xiaoliu.ziwei-month/v1，見下方函式註解）。
++   v1.5（2026-11-21）：palaces[] 加 minorStars（本命輔／煞／雜曜，含生年四化）；daen[] 加 daLuYangTuo
++                       （大限干起祿存，前一位擎羊、後一位陀羅）。純資料欄位，不參與任何計分。
++                       來源：范振木〈論命實務十一〉回測，占驗派推論大量依賴羊陀祿存與輔弼昌曲，舊檔重現不了（Nakai 裁定補欄位）。
+    ============================================================ */
+ (function(){
+   var NS='xl-merge-bridge';
+@@ -2507,6 +2510,19 @@ enhanceAllSelects(); // 把原生 <select> 換成自製下拉（Artifact 沙箱
+       return base;
+     }catch(e){ base.error=String(e&&e.message||e); return base; }
+   }
++  /* v1.5：大限祿存／擎羊／陀羅。走引擎 liuNian() 的祿存表（同流祿羊陀安法），
++     取「天干＝大限干」的任一年即可（1984＝甲，往後順推），不另抄一份祿存表。 */
++  function daLuYangTuoOf(ganIndex){
++    try{
++      if(typeof ganIndex!=='number') return null;
++      var st=E.liuNian(1984+ganIndex).stars, out={};
++      [['流祿','祿存'],['流羊','擎羊'],['流陀','陀羅']].forEach(function(pair){
++        var s=st.find(function(x){return x.name===pair[0];});
++        if(s) out[pair[1]]={zhi:E.ZHI[s.zhi], palaceName:CHART.palaces[s.zhi].palaceName};
++      });
++      return out;
++    }catch(e){ return null; }
++  }
+   window.addEventListener('message',function(ev){
+     var d=ev.data; if(!d||d.xl!==NS||d.type!=='run') return;
+     try{
+@@ -2579,7 +2595,9 @@ enhanceAllSelects(); // 把原生 <select> 換成自製下拉（Artifact 沙箱
+                    advice:DAEN_ADVICE[cls.key], isCur:r.isCur, isShen:r.isShen,
+                    /* v0.9.30 五行主線用：宮支五行、大限命宮主星（含主／次五行、生年四化、大限四化）、大限干四化、三方四正主星 */
+                    zhi:r.d.zhi, zhiElement:r.d.zhiElement, gan:r.d.gan, hua:r.d.hua, huaText:r.d.huaText,
+-                   stars:r.d.stars, starsBorrowed:!!r.d.starsBorrowed, frameStars:r.d.frameStars };
++                   stars:r.d.stars, starsBorrowed:!!r.d.starsBorrowed, frameStars:r.d.frameStars,
++                   /* v1.5：大限祿存／擎羊／陀羅（宮支＋本命宮名），純資料、不計分 */
++                   daLuYangTuo:daLuYangTuoOf(r.d.ganIndex) };
+         });
+         post({type:'ziwei-curve', ok:true, data:{
+           lunarBirthYear: CHART.lunarBirthYear,
+@@ -2590,7 +2608,9 @@ enhanceAllSelects(); // 把原生 <select> 換成自製下拉（Artifact 沙箱
+           daen: daen,
+           /* v0.9.30：十二宮主星＋五行（供回測過去大限、技能查財帛／田宅） */
+           palaces: CHART.palaces.map(function(p){ return { zhi:p.zhi, zhiElement:p.zhiElement, gan:p.gan, palaceName:p.palaceName, isMing:p.isMing, isShen:p.isShen,
+-            stars:p.stars.filter(function(s){return s.type==='主';}).map(function(s){ return {name:s.name, element:s.element, element2:s.element2, brightness:s.brightness, natalHua:s.hua}; }) }; }),
++            stars:p.stars.filter(function(s){return s.type==='主';}).map(function(s){ return {name:s.name, element:s.element, element2:s.element2, brightness:s.brightness, natalHua:s.hua}; }),
++            /* v1.5：本命輔／煞／雜曜（type＝輔｜煞｜雜；natalHua＝生年四化，昌曲輔弼可能帶化） */
++            minorStars:p.stars.filter(function(s){return s.type!=='主';}).map(function(s){ return {name:s.name, type:s.type, natalHua:s.hua||''}; }) }; }),
+           wealthSignals: ziweiWealthSignals(),
+           months: months
+         }});
