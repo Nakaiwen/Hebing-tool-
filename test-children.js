@@ -557,5 +557,27 @@ for (const c of [
   ok(taiyin && taiyin[0] === '', c.label + '：太陰不再化科（中州版已停用）');
 }
 
+/* ---------- 甲／辛／壬干化科＝占驗派（2026-11-21，范振木〈祿存擎羊陀羅及四化位置圖〉；〈有沒有錢如何看〉兩張附盤） ---------- */
+console.log('== ziwei.html 甲辛壬干化科（占驗派：甲文曲、辛武曲、壬天府） ==');
+for (const c of [
+  { label: '洪O全 1913-10-18 午時 男', input: { name: '洪', gender: 'M', y: 1913, m: 10, d: 18, h: 6, lateZi: false, leapRule: 'split15' },
+    expect: [[45, '甲子', '文曲', '科'], [65, '壬戌', '天府', '科'], [75, '辛酉', '武曲', '科']] },
+  { label: '吳O獅 1919-01-09 申時 男', input: { name: '吳', gender: 'M', y: 1919, m: 1, d: 9, h: 8, lateZi: false, leapRule: 'split15' },
+    expect: [[45, '辛酉', '武曲', '科'], [55, '壬戌', '天府', '科'], [75, '甲子', '文曲', '科']] },
+]) {
+  const sink = [];
+  const dom = loadPage('ziwei.html', { parentSink: sink });
+  sendRun(dom, c.input);
+  const resp = sink.find(m => m.type === 'ziwei-curve');
+  if (!(resp && resp.ok)) { ok(false, c.label + '：排盤成功'); continue; }
+  for (const [start, gz, star, hua] of c.expect) {
+    const r = resp.data.daen.find(x => x.start === start);
+    ok(r && (r.gan + r.zhi) === gz && r.hua[star] === hua, c.label + '：' + gz + '大限 ' + star + '化' + hua + (r ? '（實得 ' + r.huaText + '）' : ''));
+  }
+  const P = resp.data.palaces;
+  const ming = P.find(p => p.name === '命宮' || p.palaceName === '命宮');
+  ok(ming && ming.zhi === (c.input.y === 1913 ? '辰' : '巳'), c.label + '：命宮位置與范老師附盤一致');
+}
+
 console.log(fails === 0 ? '\nALL PASS' : '\nFAILED: ' + fails);
 process.exit(fails === 0 ? 0 : 1);
