@@ -535,5 +535,27 @@ console.log('== ziwei.html 副星回歸（1967-03-25 亥時 男，范振木附�
   }
 }
 
+/* ---------- 庚干四化＝占驗派（2026-11-21 Nakai 裁定）：范振木學歷命例二、四兩張庚年附盤 ---------- */
+console.log('== ziwei.html 庚干四化（占驗派：太陽祿、武曲權、天同科、天相忌） ==');
+for (const c of [
+  { label: '學歷例四 1960-07-17 寅時 男', input: { name: '學歷例四', gender: 'M', y: 1960, m: 7, d: 17, h: 2, lateZi: false, leapRule: 'split15' },
+    expect: { 太陽: ['祿', '辰'], 武曲: ['權', '卯'], 天同: ['科', '寅'], 天相: ['忌', '丑'] } },
+  { label: '學歷例二 1990-03-06 寅時 女', input: { name: '學歷例二', gender: 'F', y: 1990, m: 3, d: 6, h: 2, lateZi: false, leapRule: 'split15' },
+    expect: { 太陽: ['祿', '寅'], 武曲: ['權', '丑'], 天同: ['科', '子'], 天相: ['忌', '卯'] } },
+]) {
+  const sink = [];
+  const dom = loadPage('ziwei.html', { parentSink: sink });
+  sendRun(dom, c.input);
+  const resp = sink.find(m => m.type === 'ziwei-curve');
+  if (!(resp && resp.ok)) { ok(false, c.label + '：排盤成功'); continue; }
+  const P = resp.data.palaces;
+  const where = name => { const p = P.find(p => p.stars.some(s => s.name === name)); return p ? [p.stars.find(s => s.name === name).natalHua, p.zhi] : null; };
+  const bad = Object.keys(c.expect).filter(k => JSON.stringify(where(k)) !== JSON.stringify(c.expect[k]))
+    .map(k => k + '應' + c.expect[k].join('在') + '實得' + JSON.stringify(where(k)));
+  ok(bad.length === 0, c.label + '：生年四化與范老師附盤一致' + (bad.length ? '（' + bad.join('、') + '）' : ''));
+  const taiyin = where('太陰');
+  ok(taiyin && taiyin[0] === '', c.label + '：太陰不再化科（中州版已停用）');
+}
+
 console.log(fails === 0 ? '\nALL PASS' : '\nFAILED: ' + fails);
 process.exit(fails === 0 ? 0 : 1);
