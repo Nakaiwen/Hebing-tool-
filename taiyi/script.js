@@ -6963,6 +6963,11 @@ if (switchToNationalBtn) {
        年齡慣例依本工具原始碼：虛歲（西元年＝出生年＋歲−1）。
        行年序列另附太乙既有計算的 specialYears：祿馬交馳與科甲年份分類。
        v1.4（2026-11-21）：data.natal 附本命星曜盤快照（xiaoliu.taiyi-natal/v1），純資料、不計分。
+       v1.5（2026-11-24）：行年序列每點附 age／palaceId／palaceShortName（行年宮）。
+         來源：流年雙宮判法（Nakai 2026-11-23 定）——行年宮＝該年命宮（內我）、
+         流年地支宮＝外部環境；地支宮技能可由 natal.arrangedLifePalaces 反查，
+         行年宮存檔原本拿不到，故在此補。直接重用單機版 calculateXingNian 歲數地圖，
+         不另寫第二套；additive，父頁與舊讀法不受影響。
        ============================================================ */
     (function(){
       var NS='xl-merge-bridge';
@@ -7011,6 +7016,12 @@ if (switchToNationalBtn) {
           /* --- 行年趨勢（同 annual 圖表模式計算路徑：限例分＋行年加權分）--- */
           var glMap={};
           limitData.forEach(function(li,k){ glMap[li.palaceId]=limitScores[k]; });
+          /* v1.5：行年宮地圖（歲數→宮位），與單機版 annualPalaceId 同一計算路徑 */
+          var xnMap={};
+          var xnFull=calculateXingNian(currentChartData.gender, 1, 106);
+          Object.keys(xnFull).forEach(function(pid){
+            xnFull[pid].ages.forEach(function(a){ xnMap[a]=pid; });
+          });
           var annPts=[];
           for(var age=1; age<=106; age++){
             var cur=null;
@@ -7020,7 +7031,12 @@ if (switchToNationalBtn) {
             }
             if(!cur) continue;
             var fin=(glMap[cur.palaceId]||0)+calculateAnnualScore(age, currentChartData.chartModel, currentChartData);
-            annPts.push({ year:birthY+age-1, value:fin });
+            var xnPid=xnMap[age]||null;
+            annPts.push({ year:birthY+age-1, value:fin, age:age,
+              palaceId:xnPid,
+              palaceShortName:xnPid
+                ? (currentChartData.arrangedLifePalaces[VALID_PALACES_CLOCKWISE.indexOf(xnPid)]||null)
+                : null });
           }
           /* --- 太乙特殊年份：直接重用本盤既有引擎，不在父頁重算或寫死個案歲數 --- */
           var luMaYears=findLuMaJiaoChiYears(currentChartData)||{threeWay:[],twoWay:[]};
